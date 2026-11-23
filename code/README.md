@@ -1,7 +1,7 @@
 # Mã nguồn đề tài: Thẻ sinh viên (Nhóm 1 · L02)
 
 > Đây là **bản hoàn chỉnh** của cả hai phần: applet Java Card và phần mềm máy tính (Java Swing + SQL Server). Các file trong `../th/` giải thích applet theo từng bài thực hành – vấn đáp sẽ hỏi từng dòng, nên mỗi người phải đọc hiểu phần mình trình bày.
-> Kiểm chứng ngày 08/11/2026 bằng [run-test.cmd](run-test.cmd): **49/49 kịch bản** applet + thư viện + CSDL và **8/8 kiểm tra giao diện** (chạy đủ luồng qua các màn hình, chụp 14 ảnh). Chạy trên jCardSim 2.2.2 + SQLite. **Chưa chạy trên JCIDE và SQL Server thật** – lần đầu chạy theo [../04-moi-truong-cau-hinh.md](../04-moi-truong-cau-hinh.md) mục 7 và ghi kết quả vào nhật ký ở đó.
+> Kiểm chứng bằng [run-test.cmd](run-test.cmd): **49/49 kịch bản** applet + thư viện + CSDL và **8/8 kiểm tra giao diện** (chạy đủ luồng qua các màn hình, chụp 14 ảnh), trên jCardSim 2.2.2 + SQLite. Ngày 23/11/2026 thêm [run-test-sqlserver.cmd](run-test-sqlserver.cmd): cùng bộ kịch bản trên **SQL Server 2022 Express thật** (52/52, database riêng `the_sinh_vien_test` tự tạo/xóa) và [applet/build-cap.cmd](applet/build-cap.cmd): applet qua bộ chuyển đổi Java Card 2.2.2 + Off-card Verifier của Oracle (0 lỗi). **Chưa Run thẻ ảo trong giao diện JCIDE** – làm theo [../07-cai-dat-chay-that.md](../07-cai-dat-chay-that.md) mục 5 rồi ghi nhật ký ở [../04-moi-truong-cau-hinh.md](../04-moi-truong-cau-hinh.md). Kiểm tra cả môi trường một lệnh: [../kiem-tra-moi-truong.ps1](../kiem-tra-moi-truong.ps1).
 
 ## Cấu trúc
 
@@ -35,9 +35,11 @@ code/
 │           ├── Theme.java, Ui.java, Icons.java, BarChart.java, Fmt.java, Validators.java, ImageUtil.java, Dialogs.java
 │           └── DashboardPage, IssueCardPage, StudentsPage, MyInfoPage, PinPage,
 │               WalletPage, CashierPage, AttendancePage, SecurityPage, StatsPage
-├── test/src/SimTest.java                  ← 49 kịch bản (applet + host + CSDL)
+├── applet/build-cap.cmd                   ← build CAP bằng bộ chuyển đổi Java Card 2.2.2 + Off-card Verifier
+├── test/src/SimTest.java                  ← 49 kịch bản (applet + host + CSDL); -Dtest.config=… thì chạy trên SQL Server thật
 ├── test/src/sinhvien/ui/UiShots.java      ← chạy luồng qua giao diện + chụp ảnh màn hình
-└── run-test.cmd
+├── run-test.cmd                           ← SimTest + UiShots (SQLite, không cần cài gì)
+└── run-test-sqlserver.cmd                 ← SimTest trên SQL Server thật (database the_sinh_vien_test)
 ```
 
 ## Chạy
@@ -49,7 +51,8 @@ code/
 | Chạy không cần NetBeans | `host\chay-phan-mem.cmd` |
 | Xem thử khi chưa cài JCIDE / SQL Server | `app.properties`: `card.mode=jcardsim`, `db.url=jdbc:sqlite:the_sinh_vien.db` ([04 mục 4.4](../04-moi-truong-cau-hinh.md#44-chạy-nhanh-không-cần-netbeans--jcide--sql-server)) |
 | Demo báo cáo | JCIDE Run + SQL Server, `card.mode=pcsc` ([04 mục 7](../04-moi-truong-cau-hinh.md#7-chạy-demo-đúng-chuẩn-báo-cáo-jcide--sql-server)) |
-| Kiểm thử | `run-test.cmd` → hai dòng `TẤT CẢ … ĐỀU ĐÚNG` |
+| Kiểm thử | `run-test.cmd` → hai dòng `TẤT CẢ … ĐỀU ĐÚNG`; `run-test-sqlserver.cmd` → `52 KỊCH BẢN … SQL Server thật`; `applet\build-cap.cmd` → `0 errors`, `0 warnings` |
+| Kiểm tra môi trường | `powershell -ExecutionPolicy Bypass -File ..\kiem-tra-moi-truong.ps1` (thêm `-ChayKiemThu` để chạy luôn 3 bộ kiểm thử) |
 
 ## Ảnh giao diện
 

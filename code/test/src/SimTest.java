@@ -181,12 +181,34 @@ public class SimTest {
         check("Sửa số tiền trên biên nhận -> chữ ký không còn hợp lệ",
                 !CardCrypto.verify(pub, CardCrypto.receiptMessage("CT070254", r2), r2.signature));
 
-        // ---- CSDL (SQLite trong bộ nhớ, cùng schema với bản thật) ----
+        // ---- CSDL: mặc định SQLite trong bộ nhớ (cùng schema với bản thật);
+        //      có -Dtest.config=<file .properties> thì chạy trên SQL Server thật (database tên *_test, tự tạo/xóa) ----
         AppConfig cfg = AppConfig.load("host/app.properties");
         check("app.properties: AID trùng applet, giao thức T=0",
                 Arrays.equals(cfg.appletAid(), CardClient.APPLET_AID) && cfg.protocol().equals("T=0"));
-        CardRepository repo = new CardRepository(java.sql.DriverManager.getConnection("jdbc:sqlite::memory:"));
-        repo.runScript(CardRepository.class.getResourceAsStream("db/schema-sqlite.sql"));
+        String testConfig = System.getProperty("test.config");
+        AppConfig dbCfg = null;
+        CardRepository repo;
+        if (testConfig == null) {
+            repo = new CardRepository(java.sql.DriverManager.getConnection("jdbc:sqlite::memory:"));
+            repo.runScript(CardRepository.class.getResourceAsStream("db/schema-sqlite.sql"));
+        } else {
+            dbCfg = AppConfig.load(testConfig);
+            dropTestDatabase(dbCfg); // làm sạch lần chạy trước (chỉ database có tên kết thúc bằng _test)
+            repo = sinhvien.host.DatabaseBootstrap.open(dbCfg);
+            check("CSDL thật: " + repo.productName() + " (tự tạo database + schema)",
+                    repo.productName().toLowerCase().contains("sql server") && repo.countStudents() == 0);
+            check("CSDL thật: 3 tài khoản mẫu đăng nhập được (băm SHA-256 + salt), sai mật khẩu bị từ chối",
+                    repo.login("admin", "admin@123") != null && repo.login("thungan", "thungan@123") != null
+                            && repo.login("gv", "gv@123") != null && repo.login("admin", "sai") == null
+                            && repo.rooms().size() == 3);
+            try (java.sql.Statement s = repo.connection().createStatement();
+                 java.sql.ResultSet rs = s.executeQuery(
+                         "SELECT is_auto_close_on FROM sys.databases WHERE database_id = DB_ID()")) {
+                rs.next();
+                check("CSDL thật: AUTO_CLOSE đã tắt (tránh mở lại database ở mỗi lần kết nối)", rs.getInt(1) == 0);
+            }
+        }
         Map<Integer, String> all = new LinkedHashMap<Integer, String>(info);
         all.putAll(contact);
         repo.upsertStudent(all, photo);
@@ -264,8 +286,34 @@ public class SimTest {
         card.setLocked(false);
         check("Admin mở khóa: thẻ hoạt động lại", card.status().state == 1);
 
+        if (dbCfg != null) {
+            repo.connection().close();
+            dropTestDatabase(dbCfg);
+            System.out.println("     (đã xóa database test " + testDbName(dbCfg) + ")");
+        }
         System.out.println();
-        System.out.println("TẤT CẢ " + passed + " KỊCH BẢN ĐỀU ĐÚNG");
+        System.out.println("TẤT CẢ " + passed + " KỊCH BẢN ĐỀU ĐÚNG" + (dbCfg != null ? " (CSDL: SQL Server thật)" : " (CSDL: SQLite)"));
+    }
+
+    // ---- Hỗ trợ chạy trên SQL Server thật ----
+
+    static String testDbName(AppConfig cfg) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)databaseName=([^;]+)").matcher(cfg.dbUrl());
+        if (!m.find() || !m.group(1).trim().matches("[A-Za-z0-9_]+_test")) {
+            throw new IllegalStateException("Từ chối chạy: db.url phải có databaseName=<tên>_test (tránh xóa nhầm CSDL thật): " + cfg.dbUrl());
+        }
+        return m.group(1).trim();
+    }
+
+    /** Xóa database test nếu còn từ lần chạy trước. Chỉ chạy với tên kết thúc bằng _test. */
+    static void dropTestDatabase(AppConfig cfg) throws Exception {
+        String name = testDbName(cfg);
+        String master = cfg.dbUrl().replaceAll("(?i)databaseName=[^;]+", "databaseName=master");
+        try (java.sql.Connection c = java.sql.DriverManager.getConnection(master, cfg.dbUser(), cfg.dbPassword());
+             java.sql.Statement s = c.createStatement()) {
+            s.execute("IF DB_ID(N'" + name + "') IS NOT NULL BEGIN ALTER DATABASE [" + name
+                    + "] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [" + name + "]; END");
+        }
     }
 
     // ------------------------------------------------------------------

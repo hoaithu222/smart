@@ -305,4 +305,6 @@ Sửa applet hay phần mềm xong đều chạy lại; dòng cuối mỗi phầ
 |---|---|---|
 | 07/11/2026 | (máy soạn notes) | Bộ test jCardSim 49/49; **chưa chạy JCIDE** |
 | 08/11/2026 | (máy soạn notes) | Phần mềm đủ 10 màn hình; `run-test.cmd` qua 49 + 8 kiểm tra; driver SQL Server nạp được và báo lỗi đúng khi chưa có server. **Chưa chạy trên SQL Server thật và JCIDE** – người đầu tiên chạy được ghi lại ở đây |
+| 22/11/2026 | (máy soạn notes) | **Chạy được trên SQL Server 2022 Express thật** (instance `SQLEXPRESS`, TCP 1433, đăng nhập `sa`): `DatabaseBootstrap` tự tạo `the_sinh_vien` + 5 bảng + 3 tài khoản + 3 phòng; phần mềm mở được. Mã biên dịch sạch trên JDK 8. NetBeans 32 (zip) mở được. **Chưa chạy JCIDE** (chưa có bộ JavaCardKit). Chi tiết: [07-cai-dat-chay-that.md](07-cai-dat-chay-that.md) |
+| 23/11/2026 | (máy soạn notes) | JCKit **1.0.5.39** đã có ở `C:\JavaCardKit` (JCIDE + 2 đầu đọc ảo `JAVACOS Virtual …` đã đăng ký PC/SC). **SimTest chạy trên SQL Server thật: 52/52**; `run-test.cmd` 49/49 + 8/8; applet qua bộ chuyển đổi Java Card 2.2.2 (0 lỗi/0 cảnh báo) và Off-card Verifier của Oracle (0 lỗi/0 cảnh báo); PC/SC tới mức "chưa có thẻ". Tắt AUTO_CLOSE cho database. **Chưa Run thẻ ảo trong giao diện JCIDE** (chưa mở). Chi tiết: [07 mục 8](07-cai-dat-chay-that.md#8-kết-quả-kiểm-thử-ngày-23112026) |
 | | | |

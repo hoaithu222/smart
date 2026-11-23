@@ -1,0 +1,6 @@
+code/host/app.local.properties
+code/host/build/
+code/test/build/
+*.db
+code/build/
+code/applet/build/

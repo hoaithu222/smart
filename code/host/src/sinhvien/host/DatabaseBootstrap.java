@@ -50,7 +50,23 @@ public final class DatabaseBootstrap {
             throw new IOException("Không tìm thấy sinhvien/host/" + script + " trong classpath");
         }
         repo.runScript(in);
+        if (product.contains("sql server")) {
+            tuneSqlServer(repo);
+        }
         return repo;
+    }
+
+    /**
+     * Bản Express tạo database với AUTO_CLOSE ON: hết kết nối thì database đóng, lần mở sau phải khởi động lại
+     * database nên chậm. Tắt đi. Cần quyền ALTER DATABASE (sa có); không đủ quyền thì bỏ qua, không ảnh hưởng chạy.
+     */
+    private static void tuneSqlServer(CardRepository repo) {
+        try (Statement st = repo.connection().createStatement()) {
+            st.execute("IF EXISTS (SELECT 1 FROM sys.databases WHERE database_id = DB_ID() AND is_auto_close_on = 1) "
+                    + "ALTER DATABASE CURRENT SET AUTO_CLOSE OFF");
+        } catch (SQLException ignored) {
+            // không đủ quyền: giữ nguyên cấu hình
+        }
     }
 
     private static Connection connect(AppConfig cfg, String url) throws SQLException {
