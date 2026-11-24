@@ -33,7 +33,7 @@ function Prop($file, $key) {
 
 # ---------------------------------------------------------------- Java
 Head 'Java'
-$jdk8 = 'C:\Program Files\Eclipse Adoptium\jdk-8.0.512.9-hotspot'
+$jdk8 = 'C:\Program Files\Eclipse Adoptium\jdk-8.0.512.9-hotspot'; if (-not (Test-Path "$jdk8\bin\javac.exe") -and (Test-Path 'D:\Tools\jdk8\bin\javac.exe')) { $jdk8 = 'D:\Tools\jdk8' }
 if (Test-Path "$jdk8\bin\javac.exe") {
     $v = (& "$jdk8\bin\javac.exe" -version 2>&1) -join ' '
     Show 'DAT' 'JDK 8 (biên dịch applet -source 1.5, đúng JCIDE/Java Card 2.2.2)' $v

@@ -56,6 +56,15 @@ public final class AppConfig {
         return get("card.sim.adminPin", "87654321");
     }
 
+    /**
+     * PUK quản trị (12-16 ký tự) nạp cùng PIN quản trị lúc "cài applet" ở chế độ jcardsim: đường khôi phục khi
+     * PIN quản trị bị khóa (F-02). Trống = thẻ không có đường khôi phục này.
+     */
+    public String simAdminPuk() {
+        String v = get("card.sim.adminPuk", "");
+        return v.isEmpty() ? null : v;
+    }
+
     /** Một phần tên đầu đọc, ví dụ "JAVACOS Virtual". Để trống = lấy đầu đọc đầu tiên có thẻ. */
     public String readerName() {
         return get("card.reader", "");

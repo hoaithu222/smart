@@ -29,7 +29,7 @@ import java.util.Map;
 public class CardRepository {
 
     /** Kết quả ghi một biên nhận. */
-    public enum RecordResult { OK, BAD_SIGNATURE, REPLAY, UNKNOWN_CARD }
+    public enum RecordResult { OK, BAD_SIGNATURE, REPLAY, UNKNOWN_CARD, BAD_TYPE }
 
     // ------------------------------------------------------------ kiểu dữ liệu
 
@@ -333,6 +333,11 @@ public class CardRepository {
         PublicKey key = activePublicKey(maSv);
         if (key == null) {
             return RecordResult.UNKNOWN_CARD;
+        }
+        // F-10: chỉ 3 loại biên nhận hợp lệ. Chữ ký xác thực thẻ (AUTH_CARD) mang tiền tố 0x41 và thẻ ký cho
+        // challenge tùy ý, nên không được để nó lọt vào sổ như một biên nhận.
+        if (r.type != CardClient.TX_TOPUP && r.type != CardClient.TX_PAY && r.type != CardClient.TX_CHECKIN) {
+            return RecordResult.BAD_TYPE;
         }
         if (!CardCrypto.verify(key, CardCrypto.receiptMessage(maSv, r), r.signature)) {
             return RecordResult.BAD_SIGNATURE;

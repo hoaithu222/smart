@@ -20,7 +20,7 @@ Thứ tự làm lần đầu: **mục 1** (cài) → **mục 2** (JCIDE) → **m
 | Thẻ giả lập trong phần mềm (tùy chọn) | jCardSim 2.2.2 | Chỉ dùng khi tự thử / bộ test; **báo cáo dùng JCIDE** |
 | AID | Package `4B 4D 41 53 56 01` · Applet `4B 4D 41 53 56 01 01` | "KMASV" + 01 |
 | CLA | `B0` | Như ví dụ kết nối |
-| PIN quản trị (tham số cài đặt) | `87654321` → hex `38 37 36 35 34 33 32 31` | Đổi khi demo thật |
+| PIN quản trị (tham số cài đặt) | `87654321` → hex `38 37 36 35 34 33 32 31`; PUK quản trị (tùy chọn) nối sau byte `00` | Đổi khi demo thật; thiếu tham số thì applet không cài (mục 2.4) |
 
 ## 1. Cài đặt (mỗi máy làm một lần)
 
@@ -70,10 +70,10 @@ Thứ tự làm lần đầu: **mục 1** (cài) → **mục 2** (JCIDE) → **m
 | Ô | Giá trị |
 |---|---|
 | Instance AID | `4B 4D 41 53 56 01 01` (7 byte, trong khoảng 5–16) |
-| Application Specific Parameters | `38 37 36 35 34 33 32 31` (= chuỗi ASCII `87654321`, PIN quản trị) |
+| Application Specific Parameters | `38 37 36 35 34 33 32 31` (= chuỗi ASCII `87654321`, PIN quản trị) **hoặc**, để có đường khôi phục khi PIN quản trị bị khóa: `38 37 36 35 34 33 32 31 00 38 37 36 35 34 33 32 31 30 39 38 37` (= `87654321` · byte `00` · PUK quản trị `876543210987`, 12–16 ký tự) |
 | Application Privileges | để trống |
 
-Không nhập tham số → applet dùng PIN quản trị mặc định `12345678` (chỉ để chạy thử). Cách applet đọc tham số: [th/th4-install-khoi-tao-the.md](th/th4-install-khoi-tao-the.md).
+**Bắt buộc phải có tham số** (đã sửa F-01, 24/11/2026): không nhập, PIN quản trị ngắn hơn 4 hoặc dài hơn 16 ký tự, hoặc PUK quản trị ngắn hơn 12 → applet **từ chối cài đặt**, không còn PIN quản trị mặc định `12345678`. JCIDE sẽ báo lỗi cài đặt (chưa thử trên JCIDE thật, ghi kết quả vào nhật ký 04 khi thử). Chỉ PIN quản trị thì cài được nhưng nếu 5 lần `VERIFY_ADMIN` sai thì PIN quản trị khóa vĩnh viễn; có PUK quản trị thì mở lại bằng lệnh `UNBLOCK_ADMIN 24` ([03 mục 5.6](03-thiet-ke.md#56-giới-hạn-nói-thẳng-khi-bị-hỏi)). Cách applet đọc tham số: [th/th4-install-khoi-tao-the.md](th/th4-install-khoi-tao-the.md).
 
 ### 2.5 Chạy thẻ ảo
 

@@ -35,9 +35,22 @@ public class SimCardChannel implements ApduChannel {
     private boolean inserted;
 
     public SimCardChannel(byte[] appletAid, String adminPin) {
+        this(appletAid, adminPin, null);
+    }
+
+    /** adminPuk (>= 12 ký tự) có thể null: khi đó thẻ không có đường khôi phục PIN quản trị bị khóa. */
+    public SimCardChannel(byte[] appletAid, String adminPin, String adminPuk) {
         aid = new AID(appletAid, (short) 0, (byte) appletAid.length);
         byte[] pin = adminPin.getBytes(StandardCharsets.US_ASCII);
-        // Tham số cài đặt đúng định dạng TH4: [Li][AID][Lc=0][La][PIN quản trị]
+        if (adminPuk != null) {
+            // dữ liệu = PIN | 00 | PUK quản trị
+            byte[] puk = adminPuk.getBytes(StandardCharsets.US_ASCII);
+            byte[] both = new byte[pin.length + 1 + puk.length];
+            System.arraycopy(pin, 0, both, 0, pin.length);
+            System.arraycopy(puk, 0, both, pin.length + 1, puk.length);
+            pin = both;
+        }
+        // Tham số cài đặt đúng định dạng TH4: [Li][AID][Lc=0][La][PIN quản trị (| 00 | PUK quản trị)]
         byte[] params = new byte[3 + appletAid.length + pin.length];
         int p = 0;
         params[p++] = (byte) appletAid.length;

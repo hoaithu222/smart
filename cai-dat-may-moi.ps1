@@ -39,6 +39,7 @@ $hasWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
 
 # ---------- 1. JDK 8 ----------
 $jdk8 = Get-ChildItem 'C:\Program Files\Eclipse Adoptium' -Directory -Filter 'jdk-8*' -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $jdk8 -and (Test-Path 'D:\Tools\jdk8\bin\javac.exe')) { $jdk8 = Get-Item 'D:\Tools\jdk8' }
 if ($jdk8) {
     Say "JDK 8 da co: $($jdk8.FullName)"
 } else {

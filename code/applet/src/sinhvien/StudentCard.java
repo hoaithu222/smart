@@ -27,6 +27,7 @@ public class StudentCard extends Applet {
     static final byte INS_VERIFY_PIN   = (byte) 0x21;
     static final byte INS_CHANGE_PIN   = (byte) 0x22;
     static final byte INS_UNBLOCK_PIN  = (byte) 0x23;
+    static final byte INS_UNBLOCK_ADMIN = (byte) 0x24;
     static final byte INS_INIT_CARD    = (byte) 0x30;
     static final byte INS_GET_PUBKEY   = (byte) 0x31;
     static final byte INS_AUTH_CARD    = (byte) 0x32;
@@ -61,6 +62,10 @@ public class StudentCard extends Applet {
     static final byte ADMIN_TRY_LIMIT = (byte) 5;
     static final byte SECRET_MIN      = (byte) 4;
     static final byte SECRET_MAX      = (byte) 16;
+    // PUK quản trị KHÔNG đếm lần sai (đếm lần sai chính là cách kẻ cầm thẻ khóa được quản trị, F-02),
+    // nên phải đủ dài để không dò được: >= 12 ký tự
+    static final byte ADMIN_PUK_MIN   = (byte) 12;
+    static final short SW_ADMIN_PUK_WRONG = (short) 0x6300;
     static final byte HASH_MAX        = (byte) 32;
     static final byte SALT_LEN        = (byte) 16;
     static final byte KEY_LEN         = (byte) 16;   // AES-128
@@ -101,6 +106,8 @@ public class StudentCard extends Applet {
     private byte cardIdLen;
     private byte[] salt;
     private OwnerPIN pin, puk, admin;
+    private byte[] adminPukHash;   // băm PUK quản trị (khôi phục PIN quản trị bị khóa); không có bộ đếm
+    private boolean adminPukSet;
     private byte[] dekByPin;   // DEK mã bởi KEK sinh từ PIN
     private byte[] dekByPuk;   // DEK mã bởi KEK sinh từ PUK
     private KeyPair rsaPair;
@@ -129,8 +136,50 @@ public class StudentCard extends Applet {
     }
 
     private StudentCard(byte[] bArray, short bOffset, byte bLength) {
+        // ---- 0. Đọc và KIỂM tham số cài đặt TRƯỚC khi cấp phát (TH4): [Li][AID][Lc][ctrl][La][dữ liệu] ----
+        // Dữ liệu = PIN quản trị, hoặc PIN quản trị | 00 | PUK quản trị (khôi phục, F-02).
+        // Thiếu / sai tham số -> từ chối cài đặt (F-01): không có PIN quản trị mặc định công khai.
+        short blen = (short) (bLength & 0x00FF);
+        if (blen == 0) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+        }
+        short end = (short) (bOffset + blen);
+        short p = (short) (bOffset + (bArray[bOffset] & 0x00FF) + 1);   // qua AID
+        if (p >= end) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+        }
+        p = (short) (p + (bArray[p] & 0x00FF) + 1);                     // qua thông tin điều khiển
+        if (p >= end) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+        }
+        short la = (short) (bArray[p] & 0x00FF);
+        p = (short) (p + 1);
+        if (la < SECRET_MIN || (short) (p + la) > end) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+        }
+        short pinLen = la;
+        short pukOff = 0;
+        short pukLen = 0;
+        boolean hasPuk = false;
+        for (short i = 0; i < la; i++) {
+            if (bArray[(short) (p + i)] == 0) {          // 00 ngăn cách PIN và PUK quản trị
+                pinLen = i;
+                pukOff = (short) (p + i + 1);
+                pukLen = (short) (la - i - 1);
+                hasPuk = true;
+                break;
+            }
+        }
+        if (pinLen < SECRET_MIN || pinLen > SECRET_MAX) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+        }
+        if (hasPuk && (pukLen < ADMIN_PUK_MIN || pukLen > SECRET_MAX)) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+        }
+
         // ---- 1. Cấp phát toàn bộ bộ nhớ ngay khi cài đặt (TH4) ----
         cardId = new byte[CARD_ID_MAX];
+        adminPukHash = new byte[HASH_MAX];
         salt = new byte[SALT_LEN];
         dekByPin = new byte[KEY_LEN];
         dekByPuk = new byte[KEY_LEN];
@@ -168,23 +217,19 @@ public class StudentCard extends Applet {
 
         rng.generateData(salt, (short) 0, SALT_LEN);
 
-        // ---- 2. Đọc tham số cài đặt (TH4): [Li][AID][Lc][ctrl][La][PIN quản trị] ----
-        byte li = bArray[bOffset];
-        short p = (short) (bOffset + li + 1);
-        byte lc = bArray[p];
-        p = (short) (p + lc + 1);
-        byte la = bArray[p];
-        p = (short) (p + 1);
-        if (la >= SECRET_MIN && la <= SECRET_MAX) {
-            setSecret(admin, bArray, p, la);
-        } else {
-            byte[] def = {'1', '2', '3', '4', '5', '6', '7', '8'};
-            setSecret(admin, def, (short) 0, (byte) def.length);
+        // ---- 2. Nạp PIN quản trị (và PUK quản trị nếu có) dưới dạng giá trị băm ----
+        setSecret(admin, bArray, p, (byte) pinLen);
+        if (hasPuk) {
+            hashSecret(DOM_VERIFY, bArray, pukOff, (byte) pukLen, OFF_H1);
+            Util.arrayCopy(tmp, OFF_H1, adminPukHash, (short) 0, hashLen);
+            Util.arrayFillNonAtomic(tmp, OFF_H1, (short) 32, (byte) 0);
+            adminPukSet = true;
         }
 
         state = STATE_BLANK;
 
         // ---- 3. Đăng ký với JCRE (đặt cuối: lỗi ở trên thì không có applet dở dang) ----
+        byte li = bArray[bOffset];
         if (li == 0) {
             register();
         } else {
@@ -226,14 +271,15 @@ public class StudentCard extends Applet {
         }
 
         byte ins = buf[ISO7816.OFFSET_INS];
-        if (state == STATE_LOCKED && ins != INS_GET_STATUS
-                && ins != INS_VERIFY_ADMIN && ins != INS_SET_LOCK) {
+        if (state == STATE_LOCKED && ins != INS_GET_STATUS && ins != INS_VERIFY_ADMIN
+                && ins != INS_UNBLOCK_ADMIN && ins != INS_SET_LOCK) {
             ISOException.throwIt(SW_CARD_LOCKED);
         }
 
         switch (ins) {
         case INS_GET_STATUS:   getStatus(apdu);   return;
         case INS_VERIFY_ADMIN: verifyAdmin(apdu); return;
+        case INS_UNBLOCK_ADMIN: unblockAdmin(apdu); return;
         case INS_VERIFY_PIN:   verifyPin(apdu);   return;
         case INS_CHANGE_PIN:   changePin(apdu);   return;
         case INS_UNBLOCK_PIN:  unblockPin(apdu);  return;
@@ -289,6 +335,34 @@ public class StudentCard extends Applet {
         if (!checkSecret(admin, buf, ISO7816.OFFSET_CDATA, (byte) len)) {
             throwWrongSecret(admin);
         }
+    }
+
+    // =====================================================================
+    // Lệnh 0x24 - mở khóa PIN quản trị bằng PUK quản trị (F-02). Data: [Lpuk][PUK QT][Lnew][PIN QT mới]
+    // Không đụng tới PIN/PUK sinh viên, khóa DEK, ví, nhật ký: dữ liệu thẻ còn nguyên.
+    // PUK quản trị không có bộ đếm sai (kẻ cầm thẻ không khóa được nó); độ dài >= 12 thay cho bộ đếm.
+    // Chỉ có tác dụng khi lúc cài đặt đã nạp PUK quản trị; sau lệnh này phải VERIFY_ADMIN lại bằng PIN mới.
+    // =====================================================================
+    private void unblockAdmin(APDU apdu) {
+        byte[] buf = apdu.getBuffer();
+        short end = (short) (ISO7816.OFFSET_CDATA + apdu.setIncomingAndReceive());
+        if (!adminPukSet) {
+            ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+        }
+        short pukOff = lvValue(buf, ISO7816.OFFSET_CDATA, end);
+        byte pukLen = buf[(short) (pukOff - 1)];
+        short newOff = lvValue(buf, (short) (pukOff + pukLen), end);
+        byte newLen = buf[(short) (newOff - 1)];
+
+        hashSecret(DOM_VERIFY, buf, pukOff, pukLen, OFF_H1);
+        boolean ok = Util.arrayCompare(tmp, OFF_H1, adminPukHash, (short) 0, hashLen) == 0;
+        Util.arrayFillNonAtomic(tmp, OFF_H1, (short) 32, (byte) 0);
+        if (!ok) {
+            ISOException.throwIt(SW_ADMIN_PUK_WRONG);
+        }
+        JCSystem.beginTransaction();
+        setSecret(admin, buf, newOff, newLen); // update(): đặt lại bộ đếm sai và bỏ cờ đã xác thực
+        JCSystem.commitTransaction();
     }
 
     // =====================================================================

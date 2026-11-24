@@ -141,6 +141,9 @@ public class CashierPage extends Page {
         case REPLAY:
             verdict.set("Biên nhận đã ghi trước đó (phát lại)", Theme.WARNING);
             break;
+        case BAD_TYPE:
+            verdict.set("Loại biên nhận không hợp lệ – không ghi sổ", Theme.DANGER);
+            break;
         default:
             verdict.set("Thẻ chưa đăng ký trong CSDL", Theme.DANGER);
         }

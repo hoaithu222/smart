@@ -1,0 +1,30 @@
+# File cau hinh RIENG cua may nay (da nam trong .gitignore). Tao ngay 23/11/2026.
+# Che do chay thu: the gia lap trong phan mem + SQLite, khong can JCIDE, khong can SQL Server.
+# Khi da co JCIDE: card.mode=pcsc. Khi da cai SQL Server: xem muc "SQL Server" trong app.properties.
+card.mode=jcardsim
+card.reader=JAVACOS Virtual
+card.protocol=T=0
+card.aid=4B 4D 41 53 56 01 01
+card.challenge.bytes=16
+card.sim.adminPin=87654321
+db.url=jdbc:sqlite:the_sinh_vien.db
+db.user=
+db.password=
+db.autoCreate=true
+app.pin.length=6
+app.puk.length=8
+app.topup.max=5000
+app.photo.maxBytes=7600
+app.photo.width=120
+app.photo.height=160
+app.checkin.room=0x0203
+ui.theme=light
+ui.font=Segoe UI
+ui.fontSize=14
+log.apdu=true
+
+# ---- Khi da cai SQL Server Express (cai-dat-may-moi.ps1): comment dong db.url SQLite o tren, bo comment 4 dong duoi, dien mat khau sa ----
+#db.url=jdbc:sqlserver://localhost:1433;databaseName=the_sinh_vien;encrypt=false
+#db.user=sa
+#db.password=<mat khau sa>
+#db.autoCreate=true

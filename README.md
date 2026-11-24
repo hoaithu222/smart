@@ -60,4 +60,6 @@ Việc ngay tuần này (08–14/11):
 |---|---|---|
 | 07/11/2026 | Thu (+ Claude) | Tạo bộ notes: đặc tả, tham khảo 16 nhóm, thiết kế, cấu hình, lộ trình 8 bước, ôn vấn đáp; mã mẫu chạy qua 43 kịch bản trên jCardSim 2.2.2 |
 | 08/11/2026 | Thu (+ Claude) | Chốt SQL Server / FlatLaf / DEK-KEK / giả lập. Viết xong phần mềm Swing 10 màn hình + CSDL SQL Server tự tạo + chế độ thẻ giả lập; `run-test.cmd` 49/49 + 8/8; 14 ảnh giao diện; 04 viết lại (SQL Server, NetBeans, `app.properties`) |
+| 24/11/2026 | Thu (+ Claude) | Kiểm thử chuyên sâu: `run-deep-test.cmd` (131 kiểm tra) + `run-deep-test2.cmd` (31 kiểm tra + 4200 thao tác theo mô hình), 0 sai, 14 + 5 điểm yếu đã chứng minh. Sửa 03 (5.6 bảng điểm yếu, phân quyền) và 05 (Q42, Q48, Q50, Q51, Q53, Q67; thêm mục N câu 68–74) |
+| 24/11/2026 | Thu (+ Claude) | **Sửa mã F-01, F-02, F-10:** applet từ chối cài khi thiếu tham số (bỏ PIN quản trị mặc định); thêm `UNBLOCK_ADMIN 24` + PUK quản trị (tham số cài đặt `PIN 00 PUK`) để mở lại PIN quản trị bị khóa mà không mất dữ liệu; `recordReceipt` từ chối loại biên nhận ngoài {1, 2, 3}. `run-test.cmd` 49/49 + 8/8, `run-deep-test.cmd` 167 kiểm tra, `run-deep-test2.cmd` 31 kiểm tra, 0 sai. Cập nhật 03 (bảng lệnh, 5.4, 5.6), 04 (mục 2.4), 05, `th/th4`. **Chưa thử trên JCIDE thật** |
 | | | |

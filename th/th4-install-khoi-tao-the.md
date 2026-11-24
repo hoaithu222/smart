@@ -24,14 +24,14 @@ Thẻ có hai giai đoạn, giống thẻ thật:
 
 | Giai đoạn | Ai làm | Cách | Ghi gì |
 |---|---|---|---|
-| **Cài applet** (nhà sản xuất / trường nạp applet vào thẻ trắng) | JCIDE `Run` | Tham số cài đặt | **PIN quản trị** (`38 37 36 35 34 33 32 31` = `87654321`), salt ngẫu nhiên, cấp phát toàn bộ bộ nhớ, `state = BLANK` |
+| **Cài applet** (nhà sản xuất / trường nạp applet vào thẻ trắng) | JCIDE `Run` | Tham số cài đặt | **PIN quản trị** (`38 37 36 35 34 33 32 31` = `87654321`; thêm `00` + PUK quản trị nếu muốn có đường khôi phục), salt ngẫu nhiên, cấp phát toàn bộ bộ nhớ, `state = BLANK` |
 | **Phát hành (khởi tạo) thẻ** cho từng sinh viên | Phòng Đào tạo, phần mềm | Lệnh `INIT_CARD 30` sau `VERIFY_ADMIN 20` | Mã SV, PIN ban đầu, PUK, (bước 6: sinh DEK, cặp khóa RSA) → `state = ACTIVE` |
 
 Vì sao tách: PIN quản trị là bí mật của trường, có trước khi biết thẻ phát cho ai; mã SV/PIN thì mỗi thẻ một khác. Lệnh `INIT_CARD` chỉ chạy được **một lần** (thẻ phải đang BLANK) và **phải có quyền quản trị** – sinh viên không tự "phát hành lại" thẻ của mình được.
 
 ## 3. Việc cần làm
 
-- [ ] Hàm tạo đọc tham số theo đúng định dạng mục 1 (giống `Applet2` của TH4 và `cnt` của tài liệu kết nối). Không có tham số → PIN quản trị mặc định `12345678`.
+- [ ] Hàm tạo đọc tham số theo đúng định dạng mục 1 (giống `Applet2` của TH4 và `cnt` của tài liệu kết nối). Không có tham số hoặc sai độ dài → **từ chối cài** (`SW_WRONG_DATA`, kiểm trước khi cấp phát; trước 24/11 là PIN mặc định `12345678`, bỏ vì ai cũng biết, F-01). Dữ liệu = `PIN quản trị` hoặc `PIN quản trị | 00 | PUK quản trị (12–16 ký tự)`; PUK quản trị là đường khôi phục khi PIN quản trị bị khóa (`UNBLOCK_ADMIN 24`, F-02).
 - [ ] Gọi `register(...)` **cuối** hàm tạo.
 - [ ] `VERIFY_ADMIN 20`, `INIT_CARD 30` (data `LV(mã SV) LV(PIN) LV(PUK)`), `state` BLANK → ACTIVE.
 - [ ] Bản mốc 1: lưu thêm thông tin sinh viên **dạng rõ** bằng `WRITE_OBJ 40`/`READ_OBJ 41` (bước 6 thay bằng mã hóa, giữ nguyên định dạng lệnh).
@@ -42,6 +42,14 @@ Vì sao tách: PIN quản trị là bí mật của trường, có trước khi 
 
 ```java
 private StudentCard(byte[] bArray, short bOffset, byte bLength) {
+    // 0. đọc + KIỂM tham số cài đặt (TH4 mục 4.3) trước khi cấp phát: sai thì ném 6A80, không để lại gì
+    short blen = (short) (bLength & 0x00FF);
+    short end = (short) (bOffset + blen);
+    short p = (short) (bOffset + (bArray[bOffset] & 0x00FF) + 1);   // qua AID
+    p = (short) (p + (bArray[p] & 0x00FF) + 1);                     // qua thông tin điều khiển
+    short la = (short) (bArray[p] & 0x00FF);
+    p = (short) (p + 1);
+    // ... kiểm p < end, p + la <= end; tách PIN | 00 | PUK quản trị; PIN 4–16, PUK 12–16 ...
     // 1. cấp phát hết (TH4 mục 4.1)
     cardId = new byte[CARD_ID_MAX];
     ...
@@ -49,21 +57,12 @@ private StudentCard(byte[] bArray, short bOffset, byte bLength) {
     admin = new OwnerPIN(ADMIN_TRY_LIMIT, HASH_MAX);
     tmp = JCSystem.makeTransientByteArray(TMP_LEN, JCSystem.CLEAR_ON_RESET);
     ...
-    // 2. đọc tham số cài đặt (TH4 mục 4.3)
-    byte li = bArray[bOffset];
-    short p = (short) (bOffset + li + 1);
-    byte lc = bArray[p];
-    p = (short) (p + lc + 1);
-    byte la = bArray[p];
-    p = (short) (p + 1);
-    if (la >= SECRET_MIN && la <= SECRET_MAX) {
-        setSecret(admin, bArray, p, la);          // lưu dạng băm
-    } else {
-        byte[] def = {'1', '2', '3', '4', '5', '6', '7', '8'};
-        setSecret(admin, def, (short) 0, (byte) def.length);
-    }
+    // 2. nạp PIN quản trị (và PUK quản trị nếu có) dưới dạng băm
+    setSecret(admin, bArray, p, (byte) pinLen);
+    if (hasPuk) { /* băm PUK vào adminPukHash, adminPukSet = true */ }
     state = STATE_BLANK;
     // 3. đăng ký cuối cùng
+    byte li = bArray[bOffset];
     if (li == 0) {
         register();
     } else {

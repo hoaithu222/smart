@@ -52,7 +52,7 @@
 
 28. **`install` làm gì? Giống gì trong Java?** – Tạo thể hiện applet, đăng ký với JCRE; giống `main`.
 29. **Vì sao cấp phát hết trong hàm tạo?** – Thiếu bộ nhớ thì hỏng ngay lúc cài, JCRE dọn sạch; lúc chạy không bao giờ hết bộ nhớ.
-30. **Định dạng tham số cài đặt?** – `Li AID Lc ctrl La data`. Đề tài: `La data` = PIN quản trị.
+30. **Định dạng tham số cài đặt?** – `Li AID Lc ctrl La data`. Đề tài: `La data` = PIN quản trị, có thể kèm `00` + PUK quản trị (≥ 12 ký tự) để khôi phục khi PIN quản trị bị khóa. Không có tham số hoặc sai độ dài thì applet từ chối cài.
 
 ## H. Chia sẻ ([th5](../th5-chia-se-doi-tuong-giua-cac-applet.md), [bước 5](th/th5-chia-se-applet.md))
 
@@ -73,18 +73,18 @@
 39. **PIN lưu thế nào? Có ai đọc được PIN không?** – `SHA-256('P' ‖ salt ‖ PIN)` trong `OwnerPIN`; không ai đọc được PIN, chỉ so sánh.
 40. **Khóa AES lấy từ đâu?** – DEK ngẫu nhiên mã dữ liệu; DEK được bọc bằng KEK = 16 byte đầu `SHA-256('K' ‖ salt ‖ PIN)`. Không có PIN thì không mở được DEK.
 41. **Đổi PIN thì dữ liệu đã mã hóa thế nào?** – Không mã lại; chỉ bọc lại DEK bằng KEK mới, trong một giao dịch.
-42. **Quên PIN?** – PUK (in cho sinh viên lúc phát hành) mở bản DEK bọc bằng KEK(PUK) → đặt PIN mới, dữ liệu còn nguyên. Sai PUK 5 lần → khóa thẻ, phải phát hành lại.
+42. **Quên PIN?** – PUK (in cho sinh viên lúc phát hành) mở bản DEK bọc bằng KEK(PUK) → đặt PIN mới, dữ liệu còn nguyên. Sai PUK 5 lần → thẻ chuyển LOCKED; **Admin mở khóa bằng `SET_LOCK 00`** (PUK về 5 lần), dữ liệu, số dư, khóa RSA **còn nguyên – không phải phát hành lại**; sinh viên dùng PUK đặt PIN mới nếu PIN đang khóa. Đúng yêu cầu của cô: mở khóa không được làm mất dữ liệu (phát hành lại chỉ xảy ra khi cài lại applet).
 43. **Vì sao giá trị kiểm PIN và KEK dùng tiền tố khác nhau (`'P'`, `'K'`)?** – Nếu giống nhau, ai đọc được giá trị kiểm PIN là có luôn khóa dữ liệu.
 44. **Cặp khóa RSA sinh ở đâu? Khóa bí mật có rời thẻ không?** – Trên thẻ, lúc phát hành; không có lệnh nào đọc khóa bí mật.
 45. **Phần mềm biết thẻ thật bằng cách nào?** – Challenge–response, kiểm bằng khóa công khai đã lưu CSDL lúc phát hành (không tin khóa thẻ tự đưa).
 46. **"Mỗi lần nạp/thanh toán xác thực bằng PIN và khóa công khai" làm thế nào?** – PIN nằm trong chính lệnh `51/52`; thẻ ký biên nhận; phần mềm kiểm chữ ký + bộ đếm rồi mới ghi CSDL.
 47. **Chống phát lại?** – Challenge ngẫu nhiên khi xác thực; nonce + thời gian + bộ đếm trong biên nhận; CSDL `UNIQUE(ma_sv, bo_dem)`.
-48. **Rút thẻ giữa lúc thanh toán?** – Giao dịch nguyên tử: hoặc trừ tiền + bộ đếm + nhật ký, hoặc không gì cả. Nếu thẻ đã commit mà phần mềm chưa nhận biên nhận → đối soát bằng nhật ký trên thẻ.
+48. **Rút thẻ giữa lúc thanh toán?** – Giao dịch nguyên tử: hoặc trừ tiền + bộ đếm + nhật ký, hoặc không gì cả. Nếu thẻ đã commit mà phần mềm chưa nhận biên nhận → đối soát bằng nhật ký trên thẻ: trang Ví báo "Thẻ có N giao dịch chưa ghi sổ". **Chỉ phát hiện, không khôi phục** được: nhật ký thẻ không có chữ ký nên không ghi vào CSDL.
 49. **Vì sao mã SV không mã hóa?** – In trên mặt thẻ; phần mềm cần nó để tra khóa công khai **trước** khi có PIN.
-50. **Phân quyền làm ở đâu?** – Trên thẻ: INFO/PHOTO cần PIN quản trị, CONTACT chỉ cần PIN; khởi tạo, khóa thẻ cần PIN quản trị. Giao diện chỉ ẩn nút cho tiện.
-51. **Điểm danh không cần PIN thì có an toàn không?** – Mục đích là chứng minh **có thẻ thật** tại máy điểm danh (chữ ký); PIN làm chậm hàng người. Muốn chặt hơn thì bật PIN cho phòng thi.
+50. **Phân quyền làm ở đâu?** – Trên thẻ: INFO/PHOTO cần PIN quản trị, CONTACT chỉ cần PIN; khởi tạo, khóa thẻ cần PIN quản trị; nạp/trả cần PIN chủ thẻ; điểm danh không cần PIN. **Vai trò** thu ngân/giảng viên do **phần mềm** áp (ẩn/hiện màn hình theo vai trò) – theo cô, nạp tiền thuộc Admin/thu ngân qua phần mềm. Với phần thẻ kiểm bằng mã thì giao diện chỉ ẩn nút cho tiện.
+51. **Điểm danh không cần PIN thì có an toàn không?** – Mục đích là chứng minh **có thẻ thật** tại máy điểm danh (chữ ký); PIN làm chậm hàng người. Muốn chặt hơn thì bật PIN cho phòng thi. Hệ quả phải biết: ai quẹt cũng ghi được điểm danh; 10 lần liên tiếp đẩy hết lịch sử nạp/trả khỏi nhật ký 10 ô của thẻ và làm bộ đếm giao dịch tăng (F-04).
 52. **Ảnh lưu thế nào?** – JPEG ≤ 7,6 KB, đệm, chia khối 240 byte, mã AES từng khối trên thẻ.
-53. **Hạn chế của hệ thống?** – [03 mục 5.6](03-thiet-ke.md#56-giới-hạn-nói-thẳng-khi-bị-hỏi): PIN ngắn nếu đọc được EEPROM; thời gian do máy tính cấp; SHA-1 trong chữ ký do giới hạn 2.2.2.
+53. **Hạn chế của hệ thống?** – [03 mục 5.6](03-thiet-ke.md#56-giới-hạn-nói-thẳng-khi-bị-hỏi): PIN ngắn nếu đọc được EEPROM (đã đo: ~0,2 giây cho PIN 6 số); dữ liệu mã hóa không có MAC; thời gian do máy tính cấp; SHA-1 trong chữ ký do giới hạn 2.2.2; PIN quản trị khóa sau 5 lần sai (mở lại được bằng PUK quản trị nếu thẻ cài kèm, F-02). Bảng đầy đủ các điểm yếu đã chứng minh ở mục 5.6.
 
 ## L. Câu hỏi "nếu…" và chỉ vào mã
 
@@ -104,7 +104,19 @@
 64. **Mật khẩu cán bộ lưu thế nào?** – `SHA-256(salt + mật khẩu)` trong bảng `nguoi_dung`, so sánh bằng `MessageDigest.isEqual`.
 65. **Sao giao diện không bị "đơ" khi sinh khóa RSA?** – Lệnh chạy trong `SwingWorker` (lớp `Task`), luồng giao diện chỉ nhận kết quả.
 66. **Chế độ `jcardsim` để làm gì? Báo cáo có dùng không?** – Thẻ giả lập chạy đúng `StudentCard` trong phần mềm để tự thử/kiểm thử khi chưa mở JCIDE. Báo cáo dùng JCIDE (`card.mode=pcsc`).
-67. **Phân quyền ở phần mềm và ở thẻ khác nhau thế nào?** – Phần mềm chỉ ẩn màn hình theo vai trò cho gọn; quyền thật (ghi INFO/ảnh, khởi tạo, khóa thẻ) do thẻ kiểm bằng PIN quản trị.
+67. **Phân quyền ở phần mềm và ở thẻ khác nhau thế nào?** – Thẻ kiểm bằng mã: PIN quản trị (ghi INFO/ảnh, khởi tạo, khóa/mở khóa) và PIN chủ thẻ (nạp, trả, sửa CONTACT). **Vai trò** Admin/Thu ngân/Giảng viên là của phần mềm; thẻ không biết ai đang cầm đầu đọc.
+
+## N. Câu hỏi khó rút ra từ kiểm thử chuyên sâu (nói thẳng điểm yếu, kèm hướng sửa)
+
+> Nguồn: [03 mục 5.6](03-thiet-ke.md#56-giới-hạn-nói-thẳng-khi-bị-hỏi) và `code/run-deep-test.cmd`, `code/run-deep-test2.cmd`. Mã F-xx trùng với đầu ra của test. Cô ưa kiểu trả lời "biết điểm yếu + biết sửa" hơn là nói hệ thống hoàn hảo.
+
+68. **PIN quản trị nhập sai thì sao?** – 5 lần sai khóa PIN quản trị (chặn dò), và ai cầm thẻ cũng làm được điều đó (F-02). Trước đây khóa là vĩnh viễn, chỉ cài lại applet = mất dữ liệu. **Đã sửa:** lệnh `UNBLOCK_ADMIN 24` dùng **PUK quản trị** nạp lúc cài (tham số `PIN 00 PUK`) đặt lại PIN quản trị, dữ liệu thẻ còn nguyên, dùng được cả khi thẻ đang LOCKED. PUK quản trị **không đếm lần sai** (nếu có bộ đếm thì kẻ cầm thẻ khóa luôn được nó) nên phải dài ≥ 12 ký tự. Hạn chế nói thẳng: thẻ cài chỉ PIN quản trị thì vẫn khóa vĩnh viễn; chưa có màn hình nhập PUK quản trị; chưa thử trên JCIDE. Quên điền tham số khi cài thì applet từ chối cài (không còn PIN mặc định `12345678`, F-01).
+69. **Ai được nạp tiền, thẻ có kiểm không?** – Thẻ chỉ kiểm PIN chủ thẻ trong lệnh `51` rồi ký biên nhận; **ai** được nạp do phần mềm quyết (Admin/Thu ngân), đúng yêu cầu của cô. Muốn thẻ tự kiểm thu ngân thì phải có PIN/khóa thu ngân trên thẻ (F-03).
+70. **Kẻ lấy được thẻ dò PIN mất bao lâu?** – Qua đầu đọc: 3 lần sai là khóa. Nếu đọc được toàn bộ EEPROM thì dò offline: đã đo ~0,2 giây cho PIN 6 số, ~1,5 phút cho PUK 8 số vì chỉ 1 lần SHA-256 có salt (F-11). Giảm nhẹ: phần cứng thẻ thật chống đọc trộm; dùng PIN dài/hỗn hợp; băm lặp nhiều vòng nếu thẻ đủ nhanh.
+71. **Dữ liệu trên thẻ có bị sửa lén không?** – AES-CBC không có MAC (F-13): ai ghi được EEPROM lật 1 bit bản mã thì khối kế tiếp bị lật đúng bit đó mà thẻ không báo lỗi. Hướng sửa: thêm MAC cho từng khối.
+72. **Chống phát lại và đối soát có kẽ hở nào?** – Bộ đếm 16 bit quay vòng 65535 → 0 (F-09); biên nhận thật đến muộn bị coi là REPLAY (F-08); biên nhận giả loại `41` ghép từ chữ ký xác thực (thẻ ký challenge tùy ý, không cần PIN) trước đây vào được CSDL và đẩy `bo_dem_cuoi` lên cao (F-10). **F-10 đã sửa:** `recordReceipt` từ chối `type` ngoài {1, 2, 3} bằng `BAD_TYPE`, không ghi sổ, `bo_dem_cuoi` giữ nguyên. F-08 và F-09 vẫn còn.
+73. **Rút nguồn có xóa phiên PIN không? Chứng minh thế nào?** – Theo đặc tả JCRE: cờ `OwnerPIN` và khóa `TRANSIENT_DESELECT` bị xóa khi reset/bỏ chọn. Đường bỏ chọn (`deselect()`) đã có test đạt. Đường reset nguồn **không chứng minh được bằng jCardSim** (SIM-02, `reset()` của jCardSim không xóa phiên) – phải thử trên JCIDE.
+74. **Nhóm đã kiểm thử những gì?** – `SimTest` 49 kịch bản + `UiShots` 8 kiểm tra giao diện; `DeepTest` 167 kiểm tra (fuzz 4400 APDU, đối chiếu AES/SHA-256 bằng JDK độc lập); `DeepTest2` 31 kiểm tra + 4200 thao tác ngẫu nhiên đối chiếu mô hình Java viết riêng (0 lệch). Không có kiểm tra sai. Test tìm ra 19 điểm yếu, nhóm đã sửa 3 (F-01, F-02, F-10); các điểm còn lại được liệt kê ở 5.6.
 
 ## Nhật ký ôn
 

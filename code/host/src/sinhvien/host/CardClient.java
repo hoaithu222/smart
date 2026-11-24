@@ -110,6 +110,14 @@ public class CardClient {
         send(0x20, 0, 0, ascii(adminPin), false);
     }
 
+    /**
+     * Mở khóa PIN quản trị bị khóa (hết lượt) bằng PUK quản trị nạp lúc cài applet. Dữ liệu thẻ không đổi.
+     * Xong phải verifyAdmin lại bằng PIN quản trị mới. Thẻ cài không có PUK quản trị trả 6985.
+     */
+    public void unblockAdmin(String adminPuk, String newAdminPin) throws CardException, CardSwException {
+        send(0x24, 0, 0, concat(lv(ascii(adminPuk)), lv(ascii(newAdminPin))), false);
+    }
+
     /** Phát hành thẻ. Trả về khóa công khai để lưu vào CSDL. */
     public PublicKey initCard(String cardId, String pin, String puk)
             throws CardException, CardSwException, GeneralSecurityException {
@@ -283,6 +291,7 @@ public class CardClient {
             return "Sai mã, còn " + (sw & 0x0F) + " lần thử";
         }
         switch (sw) {
+        case 0x6300: return "Sai PUK quản trị";
         case 0x6983: return "Mã đã bị khóa do nhập sai quá số lần";
         case 0x6982: return "Chưa xác thực (cần nhập PIN / PIN quản trị)";
         case 0x6985: return "Trạng thái thẻ không cho phép thao tác này";

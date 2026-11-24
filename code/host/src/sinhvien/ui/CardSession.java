@@ -41,7 +41,7 @@ public class CardSession {
         this.repo = repo;
         ApduChannel base;
         if ("jcardsim".equals(cfg.cardMode())) {
-            sim = new SimCardChannel(cfg.appletAid(), cfg.simAdminPin());
+            sim = new SimCardChannel(cfg.appletAid(), cfg.simAdminPin(), cfg.simAdminPuk());
             pcsc = null;
             base = sim;
         } else {

@@ -36,6 +36,7 @@ Nguyên tắc phân vai: **thẻ quyết định** (PIN đúng/sai, đủ tiền
 | `cardId`, `cardIdLen` | byte[16] | Mã sinh viên, **lưu rõ** (in trên mặt thẻ, cần để tra khóa công khai) |
 | `salt` | byte[16] | Ngẫu nhiên, sinh lúc cài applet |
 | `pin`, `puk`, `admin` | `OwnerPIN` (3 / 5 / 5 lần, 32 byte) | Chứa **giá trị băm**, không chứa PIN |
+| `adminPukHash`, `adminPukSet` | byte[32], boolean | Băm PUK quản trị (nếu lúc cài có nạp). **Không có bộ đếm sai** (F-02, mục 5.6) |
 | `dekByPin`, `dekByPuk` | byte[16] ×2 | DEK đã mã bằng KEK(PIN) và KEK(PUK) |
 | `rsaPair` | `KeyPair` RSA-1024 (CRT nếu có) | Sinh trên thẻ lúc phát hành |
 | `infoData` / `contactData` / `photoData` | 480 / 240 / 7680 byte | Bản mã AES-CBC |
@@ -56,7 +57,7 @@ Tổng dữ liệu ≈ 8,8 KB + khóa RSA + mã applet → vừa thẻ JCOP 40 K
 
 ## 3. Bảng lệnh APDU
 
-CLA = `B0` (giống ví dụ kết nối của cô). Dữ liệu dạng `[L][giá trị]` gọi là LV. PIN/PUK/PIN quản trị là chuỗi ASCII 4–16 ký tự.
+CLA = `B0` (giống ví dụ kết nối của cô). Dữ liệu dạng `[L][giá trị]` gọi là LV. PIN/PUK/PIN quản trị là chuỗi ASCII 4–16 ký tự; PUK quản trị 12–16 ký tự.
 
 | INS | Tên | P1 / P2 | Data gửi xuống | Trả về | Điều kiện | Chức năng |
 |---|---|---|---|---|---|---|
@@ -65,6 +66,7 @@ CLA = `B0` (giống ví dụ kết nối của cô). Dữ liệu dạng `[L][gi�
 | `21` | VERIFY_PIN | – | PIN | – | ACTIVE | F2 |
 | `22` | CHANGE_PIN | – | LV(PIN cũ) LV(PIN mới) | – | ACTIVE | F3 |
 | `23` | UNBLOCK_PIN | – | LV(PUK) LV(PIN mới) | – | ACTIVE | F4 |
+| `24` | UNBLOCK_ADMIN | – | LV(PUK quản trị) LV(PIN quản trị mới) | – | mọi trạng thái (kể cả LOCKED); cần thẻ đã cài kèm PUK quản trị, không thì `6985` | Khôi phục PIN quản trị bị khóa, không mất dữ liệu (F-02). PUK sai: `6300`, không đếm lần |
 | `30` | INIT_CARD | – | LV(mã SV) LV(PIN) LV(PUK) | – | BLANK + QT | F1 |
 | `31` | GET_PUBKEY | – | – | `Lmod(2) modulus Lexp(2) exponent` | ACTIVE | F1 |
 | `32` | AUTH_CARD | – | challenge 8–64 byte | chữ ký RSA của `'A' Lid mãSV challenge` | ACTIVE | F7 |
@@ -108,6 +110,8 @@ Thông điệp thẻ ký cho `51/52/60`: `[loại][Lid][mã SV][giá trị(2)][s
 ```
 
 `state = ACTIVE` được ghi **sau cùng** trong `INIT_CARD`: rút thẻ giữa chừng thì thẻ vẫn BLANK, phát hành lại được.
+
+> Lưu ý (phân tích mã, **chưa test** vì jCardSim không giả lập được rút thẻ): `cardIdLen` được ghi *trước* `state`, nên thẻ `INIT` dở vẫn qua được kiểm tra `cardIdLen != 0` của `SET_LOCK`; admin gọi `SET_LOCK 00` sẽ đưa thẻ dở sang ACTIVE. Cách xử lý khi gặp: `GET_STATUS` thấy `state = BLANK` mà mã SV không rỗng thì **phát hành lại bằng `INIT_CARD`** (vẫn được vì còn BLANK), không dùng `SET_LOCK`.
 
 ## 5. Thiết kế bảo mật
 
@@ -153,9 +157,9 @@ Vì sao không dùng thẳng KEK_pin để mã dữ liệu?
 
 - `KeyPair(ALG_RSA_CRT, LENGTH_RSA_1024).genKeyPair()` ngay trên thẻ lúc phát hành. Khóa bí mật không có lệnh nào đọc ra.
 - Khóa công khai (`GET_PUBKEY`) lưu vào bảng `the` của CSDL **lúc phát hành, khi thẻ đang ở tay phòng Đào tạo**. Về sau phần mềm luôn lấy khóa từ CSDL, không lấy từ thẻ đang cắm (thẻ giả cũng tự đưa được khóa của nó).
-- Ký bằng `Signature.ALG_RSA_SHA_PKCS1` = SHA-1 + PKCS#1 v1.5 → phía Java kiểm bằng `Signature.getInstance("SHA1withRSA")`. Java Card 2.2.2 không có `ALG_RSA_SHA_256_PKCS1` (đã tra API 2.2.2); nêu là hạn chế của nền tảng.
+- Ký bằng `Signature.ALG_RSA_SHA_PKCS1` = SHA-1 + PKCS#1 v1.5 → phía Java kiểm bằng `Signature.getInstance("SHA1withRSA")`. Java Card 2.2.2 không có `ALG_RSA_SHA_256_PKCS1`; nêu là hạn chế của nền tảng. Đã đối chiếu [tài liệu API 2.2.2 của lớp `Signature`](https://www.win.tue.nl/pinpasjc/docs/apis/jc222/javacard/security/Signature.html) (24/11/2026): các hằng RSA chỉ có SHA-1 / MD5.
 - **Xác thực thẻ** (F7): máy tính sinh challenge 16 byte ngẫu nhiên → thẻ ký `'A' ‖ mã SV ‖ challenge` → máy tính kiểm. Challenge mới mỗi lần nên chép lại chữ ký cũ vô dụng.
-- **Biên nhận** (F8, F9): thẻ ký sau khi đã cập nhật số dư. Tiền tố loại (`01/02/03`) khác `'A'` nên chữ ký xác thực không dùng giả làm biên nhận được.
+- **Biên nhận** (F8, F9): thẻ ký sau khi đã cập nhật số dư. Tiền tố loại (`01/02/03`) khác `'A'` nên chữ ký xác thực không dùng giả làm biên nhận **loại 01/02/03** được. Riêng chữ ký xác thực mang tiền tố `41` và thẻ ký cho challenge tùy ý (không cần PIN), nên trước đây một biên nhận giả loại `41` ghép từ chữ ký `AUTH_CARD` lọt được vào CSDL (F-10). **Đã sửa 24/11/2026:** `CardRepository.recordReceipt` từ chối `type` ngoài {1, 2, 3} bằng kết quả `BAD_TYPE` (kiểm trước khi kiểm chữ ký, không ghi sổ, không đổi `bo_dem_cuoi`).
 
 ### 5.5 Toàn vẹn khi rút thẻ, chống lặp
 
@@ -164,17 +168,43 @@ Vì sao không dùng thẳng KEK_pin để mã dữ liệu?
 | Rút thẻ giữa lúc cập nhật số dư | `beginTransaction` → số dư, bộ đếm, nhật ký → `commitTransaction`: cả ba cùng còn hoặc cùng mất (TH3) |
 | Rút thẻ giữa lúc đổi PIN | `dekByPin` + `pin.update` trong một giao dịch |
 | Rút thẻ giữa lúc ghi một khối dữ liệu | `Util.arrayCopy` vào mảng bền là nguyên tử; độ dài `objLen` chỉ cập nhật **sau** khi dữ liệu đã ghi |
-| Thẻ trừ tiền xong nhưng máy tính chưa nhận được biên nhận | Lần sau cắm thẻ: đọc `GET_LOG`, so bộ đếm với `bo_dem_cuoi` trong CSDL để đối soát |
+| Thẻ trừ tiền xong nhưng máy tính chưa nhận được biên nhận | Lần sau cắm thẻ: đọc `GET_LOG`, so bộ đếm với `bo_dem_cuoi` trong CSDL; trang Ví hiện chip "Thẻ có N giao dịch chưa ghi sổ". Chỉ **phát hiện**, không tự khôi phục: nhật ký thẻ không có chữ ký nên không đưa vào CSDL được (F-08) |
 | Gửi lại biên nhận cũ vào CSDL | `bo_dem` phải > `bo_dem_cuoi`, thêm `UNIQUE(ma_sv, bo_dem)` → REPLAY |
 | Sửa số tiền trên biên nhận | Chữ ký sai → BAD_SIGNATURE |
-| Dò PIN | 3 lần sai khóa PIN; PUK 5 lần sai khóa hẳn thẻ |
+| Dò PIN | 3 lần sai khóa PIN; PUK 5 lần sai chuyển thẻ sang LOCKED. Admin mở khóa bằng `SET_LOCK 00` (PUK về 5 lần), **dữ liệu, số dư, khóa RSA còn nguyên** – đúng yêu cầu của cô: mở khóa không được làm mất dữ liệu |
 
 ### 5.6 Giới hạn (nói thẳng khi bị hỏi)
 
-- PIN 6 số chỉ có 10⁶ khả năng: nếu kẻ tấn công **đọc được toàn bộ EEPROM** thì dò offline được. Thẻ thật dựa vào phần cứng chống đọc trộm; giả lập thì không.
+- PIN 6 số chỉ có 10⁶ khả năng: nếu kẻ tấn công **đọc được toàn bộ EEPROM** thì dò offline được. Đã **đo** (F-11): ~0,2 giây cho PIN 6 số, ~1,5 phút cho PUK 8 số trên 1 luồng PC, vì bí mật chỉ qua 1 lần SHA-256 có salt, không có hàm làm chậm; dò xong là giải mã được họ tên/ảnh. Thẻ thật dựa vào phần cứng chống đọc trộm; giả lập thì không. Mô hình "khóa AES dẫn xuất từ PIN" của đề bài có cùng đặc điểm.
 - Thời gian do máy tính gửi, thẻ không có đồng hồ → chỉ dùng để ghi sổ, không dùng làm điều kiện bảo mật.
 - SHA-1 trong chữ ký là do giới hạn của Java Card 2.2.2.
 - Mã SV lưu rõ (có chủ đích, mục 2.1).
+- Dữ liệu AES-CBC **không có MAC** (F-13): ai ghi được EEPROM lật 1 bit bản mã thì khối kế tiếp bị lật đúng bit đó mà thẻ không báo lỗi.
+- Phần mềm kết nối SQL Server bằng tài khoản `sa` (`app.properties`): chưa tách quyền ở CSDL. Hướng sửa: tạo tài khoản riêng chỉ có quyền trên database `the_sinh_vien`.
+
+**Kết quả kiểm thử chuyên sâu** (24/11/2026): [code/run-deep-test.cmd](code/run-deep-test.cmd) (167 kiểm tra, fuzz 4400 APDU, đối chiếu AES/SHA-256 độc lập bằng JDK) và [code/run-deep-test2.cmd](code/run-deep-test2.cmd) (31 kiểm tra, dò PIN offline, phản hồi cụt từ thẻ, **4200 thao tác ngẫu nhiên đối chiếu với mô hình Java viết riêng, 0 lệch**). Cả hai: 0 kiểm tra sai. Test tìm ra 19 điểm yếu; **F-01, F-02, F-10 đã sửa trong mã (cùng ngày, xem dưới bảng), còn lại chưa sửa** (mã F-xx trùng với đầu ra của test):
+
+| Mã | Mức | Điểm yếu | Khi bị hỏi / hướng sửa |
+|---|---|---|---|
+| F-01 | Trung bình · **đã sửa** | Trước: cài applet **không có tham số** thì PIN quản trị mặc định là công khai `12345678`. Nay: thiếu/sai tham số thì applet **từ chối cài** (`6A80`), không còn PIN mặc định | Phải điền "Application Specific Parameters" trong JCIDE, quên thì báo lỗi cài đặt chứ không cài ra thẻ có PIN công khai |
+| F-02 | **Cao** · **đã sửa (có điều kiện)** | Trước: 5 lệnh `VERIFY_ADMIN` sai (không cần biết bí mật nào) khóa **vĩnh viễn** PIN quản trị, chỉ còn cài lại applet = mất dữ liệu (đúng loại lỗi cô trừ điểm). Nay: lệnh `UNBLOCK_ADMIN 24` dùng **PUK quản trị** (nạp lúc cài) đặt lại PIN quản trị, dữ liệu thẻ còn nguyên, dùng được cả khi thẻ đang LOCKED | Điều kiện: thẻ phải cài kèm PUK quản trị; thẻ chỉ cài PIN quản trị vẫn khóa vĩnh viễn như cũ. Chi tiết dưới bảng |
+| F-03 | Thấp so với đề bài (test in "CAO về nghiệp vụ" vì xét ngoài đề bài) | Nạp tiền chỉ cần PIN chủ thẻ; thẻ không phân biệt thu ngân. Theo cô, nạp tiền thuộc Admin/thu ngân **qua phần mềm**, nên đạt yêu cầu | Trả lời đúng như vậy; hướng mở rộng: PIN thu ngân trên thẻ |
+| F-04 | Trung bình | `CHECK_IN` không cần PIN: ai quẹt cũng ghi được; 10 lần liên tiếp đẩy hết lịch sử nạp/trả khỏi nhật ký 10 ô, bộ đếm tăng nên chip "chưa ghi sổ" báo động giả | Mục đích điểm danh là chứng minh có thẻ thật; muốn chặt thì bật PIN |
+| F-06 | Thấp | Ghi đối tượng vượt dung lượng bị từ chối nhưng dữ liệu cũ của đối tượng đó đã mất (khối 0 đã ghi đè) | Kiểm tổng dung lượng trước khi ghi khối 0 |
+| F-07 | Thấp | `READ_OBJ` khối P2 ≥ 137 trả `6F00` thay vì `6B00` (`chunk*240` tràn `short`) | Kiểm `chunk` trước khi nhân |
+| F-08 / F-09 | Thấp | Biên nhận thật đến muộn (bộ đếm nhỏ hơn) bị coi là REPLAY; bộ đếm 16 bit quay vòng 65535 → 0 | Dùng bộ đếm 32 bit hoặc so sánh có tràn |
+| F-10 | Trung bình · **đã sửa** | Trước: `recordReceipt` không kiểm loại, biên nhận giả loại `41` ghép từ chữ ký `AUTH_CARD` vào được CSDL, đẩy `bo_dem_cuoi` lên cao nên biên nhận thật sau đó bị REPLAY và chip "Khớp CSDL" bị đánh lừa. Nay: `type` ngoài {1, 2, 3} → `BAD_TYPE`, không ghi sổ | Phần mềm hiện "Loại biên nhận không hợp lệ – không ghi sổ" (màn Thu ngân) |
+| F-12 | Thấp | Thẻ chấp nhận PIN trùng PUK và PIN yếu (`0000`, `1234`) | Chặn ở phần mềm |
+| F-14 | Thấp | `CardClient` không kiểm độ dài phản hồi; khi thẻ/đầu đọc trả dữ liệu ngắn sẽ ném `ArrayIndexOutOfBounds`. Giao diện không sập (mọi lệnh đi qua `Task.run`) nhưng hiện thông báo kỹ thuật | Kiểm `r.length` trước khi đọc |
+
+**Cách sửa F-01 / F-02 / F-10 và giới hạn còn lại** (đều đã kiểm bằng `run-deep-test.cmd`, 167/167):
+
+- **Tham số cài đặt** (F-01, F-02): `La data` = `PIN quản trị` hoặc `PIN quản trị | 00 | PUK quản trị`, byte `00` ngăn cách. PIN 4–16 ký tự, PUK quản trị 12–16 ký tự. Applet kiểm **trước khi cấp phát bộ nhớ**; thiếu tham số, PIN/PUK sai độ dài, hoặc `La` lớn hơn dữ liệu thật đều bị từ chối bằng `6A80` (jCardSim bọc thành `SystemException`). Cài chỉ PIN (như `87654321` cũ) vẫn được.
+- **Vì sao PUK quản trị không đếm lần sai:** đếm lần sai chính là cách kẻ cầm thẻ khóa được admin (F-02). Bỏ bộ đếm thì kẻ cầm thẻ không khóa được đường khôi phục; thay vào đó **độ dài ≥ 12 ký tự** làm nhiệm vụ chống dò (10¹² khả năng, mỗi lần thử một APDU).
+- **Sau khi mở khóa:** PIN quản trị mới đặt qua `OwnerPIN.update` (bộ đếm về 5, bỏ cờ đã xác thực), phải `VERIFY_ADMIN` lại; PIN/PUK sinh viên, DEK, số dư, nhật ký, khóa RSA không bị chạm.
+- **Còn hạn chế:** (1) thẻ cài không kèm PUK quản trị thì `UNBLOCK_ADMIN` trả `6985`, vẫn khóa vĩnh viễn; (2) PUK quản trị là bí mật của trường, phải giữ ngoài CSDL và ngoài thẻ; (3) phần mềm đã có `CardClient.unblockAdmin` và cấu hình `card.sim.adminPuk` cho thẻ giả lập nhưng **chưa có màn hình** để nhập PUK quản trị; (4) chưa thử trên JCIDE/thẻ thật: cần kiểm JCIDE báo lỗi cài đặt thế nào khi thiếu tham số, và chuỗi `PIN 00 PUK` gõ ở ô Application Specific Parameters có tới applet đúng như jCardSim không.
+
+Hai giới hạn của **trình giả lập** (không phải lỗi applet): jCardSim trả cùng một dãy ngẫu nhiên cho mọi thẻ mới nên hai thẻ có salt/DEK trùng (SIM-01); `reset()` của jCardSim không xóa phiên PIN/admin nên **không chứng minh được** "rút nguồn thì mất phiên" (SIM-02) – phải thử trên JCIDE/thẻ thật (đường `deselect()` đã kiểm đạt).
 
 ## 6. Các luồng chính
 
@@ -228,7 +258,7 @@ sinhvien.ui    ← Swing + FlatLaf
 | GIANG_VIEN | Điểm danh, Bảo mật thẻ |
 | Sinh viên (không đăng nhập, dùng thẻ + PIN) | Thông tin thẻ, Mã PIN, Ví & lịch sử, Bảo mật thẻ |
 
-Quy tắc: màn hình **không** tạo `CommandAPDU`, không viết SQL – chỉ gọi `CardClient` / `CardRepository`. Việc chậm (sinh khóa RSA, ghi ảnh, CSDL) chạy qua `Task` (SwingWorker). Phân quyền thật vẫn do thẻ quyết; ẩn màn hình chỉ cho gọn.
+Quy tắc: màn hình **không** tạo `CommandAPDU`, không viết SQL – chỉ gọi `CardClient` / `CardRepository`. Việc chậm (sinh khóa RSA, ghi ảnh, CSDL) chạy qua `Task` (SwingWorker). Phân quyền chia hai tầng: **thẻ** tự kiểm *PIN quản trị* (ghi INFO/ảnh, khởi tạo, khóa/mở khóa) và *PIN chủ thẻ* (nạp, trả, đọc/sửa CONTACT); `CHECK_IN` không cần PIN. **Vai trò** Admin/Thu ngân/Giảng viên là của phần mềm (`MainView.pagesFor` chỉ hiện màn hình theo vai trò), thẻ không biết ai đang cầm đầu đọc – khớp yêu cầu của cô: nạp tiền thuộc Admin/thu ngân qua phần mềm. Xem mục 5.6 (F-03, F-04).
 
 ## Nhật ký
 
@@ -236,4 +266,6 @@ Quy tắc: màn hình **không** tạo `CommandAPDU`, không viết SQL – ch�
 |---|---|---|
 | 07/11/2026 | Thu | Bản đầu; khớp mã mẫu đã test 49 kịch bản |
 | 08/11/2026 | Thu | CSDL chuyển SQL Server; mục 8 cập nhật theo phần mềm đã viết |
+| 24/11/2026 | Thu (+ Claude) | Thêm kết quả kiểm thử chuyên sâu vào 5.6 (bảng F-xx, số đo dò PIN); làm rõ mục 4 (INIT dở), 5.4 (biên nhận loại `41`, đã đối chiếu API 2.2.2), 5.5 (đối soát chỉ phát hiện, mở khóa giữ dữ liệu), 8 (phân quyền hai tầng); đối chiếu yêu cầu của cô trong sổ NotebookLM "Smart" |
+| 24/11/2026 | Thu (+ Claude) | **Sửa mã F-01, F-02, F-10:** applet từ chối cài khi thiếu tham số; thêm lệnh `24` UNBLOCK_ADMIN + PUK quản trị (tham số cài đặt `PIN 00 PUK`); `recordReceipt` từ chối loại biên nhận ngoài {1, 2, 3}. Cập nhật bảng lệnh, mục 2.1, 5.4, 5.6 |
 | | | |
