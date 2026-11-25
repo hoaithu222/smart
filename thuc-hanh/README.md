@@ -237,6 +237,8 @@ Sau nhập, sửa, xóa thẻ trả lại toàn bộ bảng điểm. Lỗi: `6A 
 
 ### TH5 – Chia sẻ đối tượng ([đề](../smart/docs/th5-chia-se-doi-tuong-giua-cac-applet.md), `th5.apdu`)
 
+- **Câu hỏi lý thuyết:** [TH5-cau-hoi-chia-se.md](TH5-cau-hoi-chia-se.md).
+
 Cài `masterApp` trước. Chọn applet khách rồi gửi `00 00 01 02`:
 
 | Applet khách | Kết quả | Vì sao |

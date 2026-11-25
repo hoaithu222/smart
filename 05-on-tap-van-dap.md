@@ -56,7 +56,7 @@
 
 ## H. Chia sẻ ([th5](../th5-chia-se-doi-tuong-giua-cac-applet.md), [bước 5](th/th5-chia-se-applet.md))
 
-31. **Tường lửa applet?** – Mỗi applet một ngữ cảnh, không truy cập được đối tượng của applet khác.
+31. **Tường lửa applet?** – Ngữ cảnh tính theo **package**: applet cùng package dùng chung, giữa chúng không có tường lửa; tường lửa chặn truy cập đối tượng giữa các ngữ cảnh khác nhau (chia sẻ qua giao diện `Shareable`). Chi tiết: [hỏi đáp bài 5](thuc-hanh/TH5-cau-hoi-chia-se.md).
 32. **Chia sẻ thế nào?** – Giao diện kế thừa `Shareable`; chủ ghi đè `getShareableInterfaceObject`; khách `lookupAID` + `getAppletShareableInterfaceObject`, ép về kiểu giao diện.
 33. **Sao đề tài chỉ 1 applet?** – Bước 5 mục 2.
 

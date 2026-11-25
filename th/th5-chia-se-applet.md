@@ -5,10 +5,10 @@
 
 ## 1. Bài học cần nắm
 
-- Mỗi applet một ngữ cảnh; **tường lửa** chặn applet này đọc trường/mảng của applet khác.
+- Ngữ cảnh (bối cảnh) tính theo **package**: các applet cùng package dùng chung một ngữ cảnh nhóm, giữa chúng không có tường lửa. **Tường lửa** chặn truy cập trường/mảng giữa các ngữ cảnh khác nhau.
 - Muốn chia sẻ: applet chủ khai báo giao diện kế thừa `javacard.framework.Shareable`, lớp nào đó cài đặt giao diện (thường chính applet), ghi đè `getShareableInterfaceObject(AID client, byte param)`.
 - Applet khách: `JCSystem.lookupAID(...)` → `JCSystem.getAppletShareableInterfaceObject(aid, param)` → ép về kiểu giao diện → chỉ gọi được các phương thức trong giao diện.
-- Tham số/kiểu trả về qua tường lửa nên là kiểu cơ bản hoặc mảng toàn cục (APDU buffer); truyền mảng của applet khách sang chủ thì chủ không đọc được (kịch bản 2 của TH5 ra `6F 00`).
+- Tham số/kiểu trả về qua tường lửa nên là kiểu cơ bản hoặc mảng toàn cục (APDU buffer); truyền mảng riêng của applet khách sang chủ thì chủ không đọc/ghi được (ví dụ đầu mục 5.5 của TH5 ra `6F 00`; kịch bản 1 và 2 sau đó chạy được, trả `08`).
 
 ## 2. Quyết định cho đề tài: **một applet**
 
@@ -35,7 +35,8 @@ public interface StudentShare extends Shareable {
 public class StudentCard extends Applet implements StudentShare {
     public Shareable getShareableInterfaceObject(AID clientAid, byte parameter) {
         // chỉ phục vụ applet thư viện, tham số 0x01 là "mã bí mật" chung
-        if (clientAid.partialEquals(LIBRARY_AID, (short) 0, (byte) LIBRARY_AID.length) && parameter == (byte) 0x01) {
+        // dùng equals (so cả AID); partialEquals chỉ so phần đầu, AID dài hơn cùng tiền tố vẫn lọt
+        if (clientAid.equals(LIBRARY_AID, (short) 0, (byte) LIBRARY_AID.length) && parameter == (byte) 0x01) {
             return this;
         }
         return null;
