@@ -184,6 +184,8 @@ public final class ThucHanh {
             }
             if (ten.equals("/cai")) {
                 cai(doi);
+            } else if (ten.equals("/cai-loi")) {
+                return caiPhaiLoi(doi);
             } else if (ten.equals("/moi")) {
                 System.out.println(kenh.theMoi() ? ">> lấy thẻ trắng mới" : ">> (PC/SC: Run lại trong JCIDE để có thẻ trắng)");
             } else if (ten.equals("/reset")) {
@@ -222,6 +224,7 @@ public final class ThucHanh {
         System.out.println("  ... => 90 00            kiểm kết quả (.. = byte bất kỳ, * = đoạn bất kỳ)");
         System.out.println("  /danhsach               các applet và AID");
         System.out.println("  /cai goi.Lop [aid=..] [param=..]    cài applet lên thẻ giả lập");
+        System.out.println("  /cai-loi goi.Lop param=..           kiểm tra việc cài bị từ chối");
         System.out.println("  /select goi.Lop | AID   chọn applet");
         System.out.println("  /deselect   /reset   /moi (thẻ trắng)   /file kich_ban.apdu   /thoat");
     }
@@ -255,6 +258,24 @@ public final class ThucHanh {
             System.out.println(">> (PC/SC: cài " + l.ten + " bằng JCIDE, Instance AID " + Hex.in(aid)
                     + (param.length > 0 ? ", tham số " + Hex.in(param) : "") + ")");
         }
+    }
+
+    /** Cai dat mong doi that bai (vi du tham so cai dat sai). */
+    private boolean caiPhaiLoi(String doi) throws Exception {
+        if (!kenh.laGiaLap()) {
+            System.out.println(">> (PC/SC: thử cài trong JCIDE với " + doi + " - phải báo lỗi cài đặt)");
+            return true;
+        }
+        try {
+            cai(doi);
+        } catch (IllegalStateException e) {
+            dat++;
+            System.out.println(doc("<< cài " + doi + " bị từ chối", "ĐẠT"));
+            return true;
+        }
+        sai++;
+        System.out.println(doc("<< cài " + doi + " thành công", "SAI, mong đợi bị từ chối"));
+        return false;
     }
 
     private boolean gui(String s) throws Exception {

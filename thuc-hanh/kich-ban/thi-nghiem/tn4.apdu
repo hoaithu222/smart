@@ -1,0 +1,27 @@
+# Thi nghiem TH4: tham so cai dat sai thi applet tu choi cai.
+## Qua ngan (La = 2)
+/cai-loi bai4_InstallMethod.Applet2 param=5356
+## La = 4 (thieu byte so mon)
+/moi
+/cai-loi bai4_InstallMethod.Applet3 param=53563031
+## So mon = 0 va = 61 (ngoai 1..60)
+/moi
+/cai-loi bai4_InstallMethod.Applet3 param=5356303100
+/moi
+/cai-loi bai4_InstallMethod.Applet3 param=535630313D
+
+## So mon = 1: chi nhap duoc mot mon
+/moi
+/cai bai4_InstallMethod.Applet3 param=5356303201
+/select 4449454D5F544849
+00 00 00 00 00 => 53 56 30 32 01 00 90 00
+00 01 00 00 02 01 07 => 01 07 90 00
+00 01 00 00 02 02 07 => 6A 84
+## Cai them applet voi cung Instance AID: bi tu choi
+/cai-loi bai4_InstallMethod.Applet2
+
+## ID mon la byte bat ky, ke ca 00 va FF
+/moi
+/cai bai4_InstallMethod.Applet3
+/select 4449454D5F544849
+00 01 00 00 04 00 00 FF 0A => 00 00 FF 0A 90 00

@@ -3,6 +3,8 @@
 Mã viết theo tài liệu của cô trong [smart/docs](../smart/docs/README.md), giữ đúng tên gói, AID và lệnh APDU ở chỗ tài liệu có nêu.
 Mọi bài chạy được ngay trên **thẻ giả lập**, không cần JCIDE.
 
+**Học và ôn:** [phân tích chuyên sâu từng buổi](phan-tich/README.md) – kiến thức, phân tích mã, luồng dữ liệu, cấu hình, toàn bộ câu hỏi.
+
 ## 1. Chạy nhanh
 
 Mở PowerShell:
@@ -18,7 +20,7 @@ cd D:\sbc\smart\thuc-hanh
 Kết quả đúng ở cuối màn hình (đã chạy ngày 25/11/2026):
 
 ```text
-8 kịch bản: 115 đạt, 0 sai, 3 chỉ kiểm được trên JCIDE / thẻ thật
+16 kịch bản: 308 đạt, 0 sai, 4 chỉ kiểm được trên JCIDE / thẻ thật
 Mật mã TH6: 27 đạt, 0 sai
 Kịch bản APDU    : ĐẠT
 Mật mã TH6       : ĐẠT
@@ -52,6 +54,8 @@ Chuyển đổi CAP   : ĐẠT
 thuc-hanh\
   src\<gói>\*.java            mã applet (chép vào JCIDE)
   kich-ban\*.apdu             lệnh + kết quả mong đợi của từng bài
+  kich-ban\thi-nghiem\        thí nghiệm thêm: lệnh sai, giới hạn, tham số lỗi
+  phan-tich\                  phân tích chuyên sâu từng buổi, luồng dữ liệu, câu hỏi
   Connect_Ex_GUI\src\         chương trình Java trên máy tính (bài Kết nối)
   cong-cu\                    công cụ: build, thẻ giả lập, shell, kiểm mật mã
   goi.cfg                     Package AID, Applet AID, tham số cài đặt
@@ -173,6 +177,9 @@ Không thấy đầu đọc `JAVACOS Virtual Contact Reader 0`: kiểm tra đã 
 | `bai4_InstallMethod` | `11 22 33 44 55 04` | Applet1, 2, 3 | `…04 01` đến `…04 03` | Applet2, 3: `44 49 45 4D 5F 54 48 49` / `53 56 30 31 09` (cài từng cái một) |
 | `masterPack` | `11 22 33 44 55 05 00` | masterApp | `11 22 33 44 55 05 00 00` | |
 | `slavePack` | `11 22 33 44 55 05 01` | slaveApp, slaveAppMang, slaveAppDiem, slaveApp1, slaveAppNonStatic | `…05 01 01` đến `…05 01 05` | |
+| `chiaSeAnToan` | `11 22 33 44 55 05 02` | ChuApplet | `…05 02 01` | khóa chung 16 byte (tùy chọn) |
+| `khachAnToan` | `11 22 33 44 55 05 03` | KhachApplet | `…05 03 01` | cùng khóa với ChuApplet |
+| `khachLa` | `11 22 33 44 55 05 04` | KeXamNhap | `…05 04 01` | |
 | `bai6_Crypto` | `11 22 33 44 55 06` | HashApplet, AesApplet, RsaApplet | `…06 01` đến `…06 03` | |
 | `bai7_APDU_Extended` | `11 22 33 44 55 07` | Applet1 | `…07 01` | |
 | `cnt` | `99 88 77 66 55` | cnt | `99 88 77 66 55 00` | |
@@ -251,6 +258,8 @@ Cài `masterApp` trước. Chọn applet khách rồi gửi `00 00 01 02`:
 
 Khi vấn đáp về `slaveAppNonStatic`: trong mã của đề, biến `sv1` không hề được `new`. Trường `static` vẫn chạy vì thuộc về lớp; trường thường thì ném `NullPointerException`. Nếu tạo đối tượng trong hàm tạo thì trường không `static` cũng dùng được, vì giá trị truyền sang applet chủ vẫn chỉ là `byte`.
 
+**Mở rộng – chia sẻ có xác thực** (`th5-an-toan.apdu`, giải thích ở [phan-tich/th5.md](phan-tich/th5.md#3-phần-mở-rộng-chia-sẻ-an-toàn-theo-ghi-chú-của-nhóm)): applet chủ `chiaSeAnToan` chỉ trả đối tượng cho đúng AID, kiểm lại người gọi ở mỗi phương thức và bắt trả lời thử thách AES trước khi cho đọc dữ liệu.
+
 ### TH6 – Mật mã ([slide](../smart/docs/th6-mat-ma-trong-java-card.md), `th6.apdu`)
 
 Slide chỉ có lý thuyết, không có đề mã. Ba applet dưới đây minh họa đúng các mục trong slide.
@@ -295,7 +304,7 @@ Mở bằng NetBeans: tạo *Java Application* tên `Connect_Ex_GUI` (bỏ chọ
 
 ## 8. Thẻ giả lập khác thẻ thật ở đâu
 
-Công cụ đã **bổ sung** những gì jCardSim 2.2.2 thiếu: lệnh SELECT, xóa bộ nhớ tạm khi bỏ chọn và reset, hoàn tác khi `abortTransaction`.
+Công cụ đã **bổ sung** những gì jCardSim 2.2.2 thiếu: lệnh SELECT, xóa bộ nhớ tạm khi bỏ chọn và reset, hoàn tác khi `abortTransaction`, và đúng AID người gọi (`getAID`, `getPreviousContextAID`) trong phương thức chia sẻ.
 (Giới hạn của phần hoàn tác: cập nhật bằng hàm `…NonAtomic` trong giao dịch cũng bị hoàn tác; mảng bền chỉ được giữ bởi biến cục bộ thì không.)
 
 Những gì **vẫn khác**, chỉ tin kết quả trên JCIDE:

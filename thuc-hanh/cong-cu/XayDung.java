@@ -86,8 +86,10 @@ public class XayDung {
 
         System.out.println("[2/5] Chạy kịch bản APDU từng bài");
         List<String> kb = new ArrayList<String>();
-        for (Path p : lietKe(GOC.resolve("kich-ban"), "*.apdu")) {
-            kb.add("kich-ban" + File.separator + p.getFileName());
+        for (String thuMuc : new String[] {"kich-ban", "kich-ban" + File.separator + "thi-nghiem"}) {
+            for (Path p : lietKe(GOC.resolve(thuMuc), "*.apdu")) {
+                kb.add(thuMuc + File.separator + p.getFileName());
+            }
         }
         boolean okKichBan = !kb.isEmpty() && chayJava("thuchanh.ThucHanh", kb) == 0;
 

@@ -1,0 +1,6 @@
+# Thi nghiem ket noi: chon applet va sai CLA.
+/cai cnt.cnt
+00 A4 04 00 06 99 88 77 66 55 01 => 6A 82
+00 A4 04 00 06 99 88 77 66 55 00 => 90 00
+B0 11 00 00 00 => "HELLO" 90 00
+00 11 00 00 => 6E 00

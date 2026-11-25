@@ -1,15 +1,17 @@
 package javacard.framework;
 
 import com.licel.jcardsim.base.SimulatorSystem;
+import thuchanh.NguCanh;
 import thuchanh.NhatKyGiaoDich;
 
 /**
  * Ban thay the lop JCSystem cua jCardSim, CHI dung khi chay the gia lap trong
  * thu muc nay (khong bao gio nap xuong the).
  *
- * Moi ham deu chuyen tiep sang SimulatorSystem y nhu ban goc; khac duy nhat:
- * begin/commit/abortTransaction ghi nhat ky de abort HOAN TAC du lieu ben,
- * vi jCardSim 2.2.2 chi dem do sau giao dich ma khong hoan tac.
+ * Moi ham chuyen tiep sang SimulatorSystem y nhu ban goc, tru hai cho jCardSim 2.2.2 thieu:
+ *  - begin/commit/abortTransaction ghi nhat ky de abort HOAN TAC du lieu ben;
+ *  - getAID / getPreviousContextAID / getAppletShareableInterfaceObject co chuyen
+ *    boi canh khi goi doi tuong chia se (xem NguCanh).
  */
 public final class JCSystem {
     public static final byte MEMORY_TYPE_PERSISTENT = 0;
@@ -47,7 +49,7 @@ public final class JCSystem {
     }
 
     public static AID getAID() {
-        return SimulatorSystem.getAID();
+        return NguCanh.aidHienTai();
     }
 
     public static AID lookupAID(byte[] b, short off, byte len) {
@@ -82,7 +84,7 @@ public final class JCSystem {
     }
 
     public static AID getPreviousContextAID() {
-        return SimulatorSystem.getPreviousContextAID();
+        return NguCanh.aidTruoc();
     }
 
     public static short getAvailableMemory(byte type) throws SystemException {
@@ -100,7 +102,7 @@ public final class JCSystem {
     }
 
     public static Shareable getAppletShareableInterfaceObject(AID server, byte parameter) {
-        return SimulatorSystem.getSharedObject(server, parameter);
+        return NguCanh.layDoiTuongChiaSe(server, parameter);
     }
 
     public static boolean isObjectDeletionSupported() {

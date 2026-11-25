@@ -1,0 +1,47 @@
+# TH5 mo rong - chia se co kiem AID va thu thach - phan hoi.
+# Cai applet chu (chiaSeAnToan) truoc, roi hai applet khach.
+
+/cai chiaSeAnToan.ChuApplet
+/cai khachAnToan.KhachApplet
+/cai khachLa.KeXamNhap
+
+## Applet khach duoc phep
+/select 1122334455050301
+# dung quy trinh: thu thach -> phan hoi -> doc ma SV
+00 00 00 00 00 => "CT000001" 90 00
+# phan hoi sai 1 bit
+00 01 00 00 => 63 00
+# doc ma khong qua thu thach
+00 02 00 00 => 69 82
+# mot lan cap quyen chi doc duoc mot lan
+00 03 00 00 => 69 82
+# phat lai phan hoi cu cho thu thach moi: bi tu choi (00)
+00 04 00 00 01 => 00 90 00
+# tham so xin doi tuong sai: chu tra null
+00 05 00 00 => 69 85
+# sau cac lan sai, quy trinh dung van chay
+00 00 00 00 00 => "CT000001" 90 00
+
+## Applet la: khong nhan duoc doi tuong
+/select 1122334455050401
+00 00 00 00 => 69 85
+
+## Khach dung khoa khac (nap qua tham so cai dat): phan hoi sai
+/moi
+/cai chiaSeAnToan.ChuApplet
+/cai khachAnToan.KhachApplet param=FFEEDDCCBBAA99887766554433221100
+/select 1122334455050301
+00 00 00 00 00 => 63 00
+
+## Hai ben cung nap mot khoa rieng qua tham so cai dat
+/moi
+/cai chiaSeAnToan.ChuApplet param=FFEEDDCCBBAA99887766554433221100
+/cai khachAnToan.KhachApplet param=FFEEDDCCBBAA99887766554433221100
+/select 1122334455050301
+00 00 00 00 00 => "CT000001" 90 00
+
+## Chua cai applet chu
+/moi
+/cai khachAnToan.KhachApplet
+/select 1122334455050301
+00 00 00 00 00 => 6A 82

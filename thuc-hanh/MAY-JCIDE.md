@@ -47,6 +47,7 @@ Mỗi lần Run phải là cài mới (thẻ trắng).
 | 5 | 3 applet `bai3_Transaction` | `.\chay.cmd --pcsc=JAVACOS kich-ban\th3.apdu` | 12 đạt | |
 | 6 | `bai4_InstallMethod`, mỗi phần một applet theo hướng dẫn trên màn hình | `.\chay.cmd --pcsc=JAVACOS kich-ban\th4.apdu` | 25 đạt | |
 | 7 | `masterApp` rồi 5 applet `slavePack`; phần cuối chỉ cài `slaveApp` | `.\chay.cmd --pcsc=JAVACOS kich-ban\th5.apdu` | 6 đạt | |
+| 7b | `chiaSeAnToan`, `khachAnToan`, `khachLa` theo hướng dẫn trên màn hình (gói chủ trước) | `.\chay.cmd --pcsc=JAVACOS kich-ban\th5-an-toan.apdu` | 11 đạt | |
 | 8 | 3 applet `bai6_Crypto` | `.\chay.cmd --pcsc=JAVACOS kich-ban\th6.apdu` | 13 đạt | |
 | 9 | Cài mới lại 3 applet `bai6_Crypto` | `.\kiem-mat-ma.cmd --pcsc` | 0 sai | |
 | 10 | `bai7_APDU_Extended`, chọn **T = 1** | `.\chay.cmd --pcsc=JAVACOS kich-ban\th7.apdu` | 5 đạt | |

@@ -1,0 +1,23 @@
+# Thi nghiem TH3: ket qua giao dich ben qua reset.
+/cai bai3_Transaction.Applet1
+/cai bai3_Transaction.Applet3
+
+/select bai3_Transaction.Applet1
+00 00 01 02 => 90 00
+/reset
+/select bai3_Transaction.Applet1
+00 01 01 02 => 00 00 00 00 00 00 06 07 08 09 90 00
+# chay lai giao dich: ket qua khong doi
+00 00 01 02 => 90 00
+00 01 01 02 => 00 00 00 00 00 00 06 07 08 09 90 00
+
+## Da commit thi con sau reset
+/select bai3_Transaction.Applet3
+00 00 00 00 => 90 00
+/reset
+/select bai3_Transaction.Applet3
+00 03 00 00 08 => 01 02 03 04 05 06 07 08 90 00
+# chep roi abort: gia tri da commit truoc do giu nguyen
+00 01 00 00 => 90 00
+00 03 00 00 08 => 01 02 03 04 05 06 07 08 90 00
+00 09 00 00 => 6D 00

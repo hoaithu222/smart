@@ -42,6 +42,7 @@ public final class TheGiaLap implements KenhThe {
     public boolean theMoi() throws Exception {
         hienTai = this;
         NhatKyGiaoDich.chotLai();
+        NguCanh.xoa();
         sim = new Simulator();
         sim.resetRuntime();
         daCai.clear();
@@ -155,6 +156,17 @@ public final class TheGiaLap implements KenhThe {
 
     public String ghiChu() {
         return ghiChu;
+    }
+
+    /** Applet co AID nay tren the gia lap dang dung, null neu chua cai. */
+    static Applet applet(AID aid) {
+        if (hienTai == null || aid == null) {
+            return null;
+        }
+        byte[] b = new byte[16];
+        byte n = aid.getBytes(b, (short) 0);
+        byte[] gon = Arrays.copyOf(b, n);
+        return hienTai.daCai.containsKey(Hex.in(gon)) ? hienTai.timApplet(gon) : null;
     }
 
     /** Applet dang cai tren the gia lap dang dung (cho nhat ky giao dich). */
