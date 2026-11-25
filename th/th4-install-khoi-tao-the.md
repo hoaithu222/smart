@@ -22,10 +22,10 @@
 
 Thẻ có hai giai đoạn, giống thẻ thật:
 
-| Giai đoạn | Ai làm | Cách | Ghi gì |
-|---|---|---|---|
-| **Cài applet** (nhà sản xuất / trường nạp applet vào thẻ trắng) | JCIDE `Run` | Tham số cài đặt | **PIN quản trị** (`38 37 36 35 34 33 32 31` = `87654321`; thêm `00` + PUK quản trị nếu muốn có đường khôi phục), salt ngẫu nhiên, cấp phát toàn bộ bộ nhớ, `state = BLANK` |
-| **Phát hành (khởi tạo) thẻ** cho từng sinh viên | Phòng Đào tạo, phần mềm | Lệnh `INIT_CARD 30` sau `VERIFY_ADMIN 20` | Mã SV, PIN ban đầu, PUK, (bước 6: sinh DEK, cặp khóa RSA) → `state = ACTIVE` |
+| Giai đoạn                                                       | Ai làm                  | Cách                                      | Ghi gì                                                                                                                                                                     |
+| --------------------------------------------------------------- | ----------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cài applet** (nhà sản xuất / trường nạp applet vào thẻ trắng) | JCIDE `Run`             | Tham số cài đặt                           | **PIN quản trị** (`38 37 36 35 34 33 32 31` = `87654321`; thêm `00` + PUK quản trị nếu muốn có đường khôi phục), salt ngẫu nhiên, cấp phát toàn bộ bộ nhớ, `state = BLANK` |
+| **Phát hành (khởi tạo) thẻ** cho từng sinh viên                 | Phòng Đào tạo, phần mềm | Lệnh `INIT_CARD 30` sau `VERIFY_ADMIN 20` | Mã SV, PIN ban đầu, PUK, (bước 6: sinh DEK, cặp khóa RSA) → `state = ACTIVE`                                                                                               |
 
 Vì sao tách: PIN quản trị là bí mật của trường, có trước khi biết thẻ phát cho ai; mã SV/PIN thì mỗi thẻ một khác. Lệnh `INIT_CARD` chỉ chạy được **một lần** (thẻ phải đang BLANK) và **phải có quyền quản trị** – sinh viên không tự "phát hành lại" thẻ của mình được.
 
@@ -90,14 +90,23 @@ Giải mã lệnh `30`: `08` + `43 54 30 37 30 32 35 34` ("CT070254") · `06` + 
 
 ## 6. Câu hỏi có thể bị hỏi
 
-1. *Vì sao tạo hết đối tượng trong hàm tạo?* – TH4 mục 4.1.
-2. *Tham số cài đặt gồm những phần nào, đọc thế nào?* – mục 1; chỉ ra dòng tương ứng trong hàm tạo.
-3. *Vì sao `register` đặt cuối?* – nếu cấp phát lỗi trước đó, applet chưa đăng ký → JCRE dọn sạch.
-4. *Ai được khởi tạo thẻ? Khởi tạo hai lần được không?* – chỉ quản trị; không (`69 85`).
-5. *Rút thẻ giữa lúc khởi tạo?* – `state` ghi cuối nên vẫn BLANK, phát hành lại được.
+1. _Vì sao tạo hết đối tượng trong hàm tạo?_ – TH4 mục 4.1.
+2. _Tham số cài đặt gồm những phần nào, đọc thế nào?_ – mục 1; chỉ ra dòng tương ứng trong hàm tạo.
+3. _Vì sao `register` đặt cuối?_ – nếu cấp phát lỗi trước đó, applet chưa đăng ký → JCRE dọn sạch.
+4. _Ai được khởi tạo thẻ? Khởi tạo hai lần được không?_ – chỉ quản trị; không (`69 85`).
+5. _Rút thẻ giữa lúc khởi tạo?_ – `state` ghi cuối nên vẫn BLANK, phát hành lại được.
 
 ## Nhật ký
 
-| Ngày | Ai | Làm được | Vướng |
-|---|---|---|---|
-| | | | |
+| Ngày | Ai  | Làm được | Vướng |
+| ---- | --- | -------- | ----- |
+|      |     |          |       |
+
+Phương thức install dùng để làm gì?
+Phương thức để khởi tạo đối tượng với hệ điểu hành như thế nào?
+Dối tượng và mảng có thể tạo bất kì thời điểm nào trong lúc khởi tạo aplet, nhưng tốt nhất nên tạo tròn quá trình khởi tạo aplet
+Trong aplet thì contructor có tham số hay không có tham số nếu có tham số thì người ta sẽ truyền vào đây những tham số gì
+Phương thưc register dùng để làm gì?
+Javacrad cung cấp mấy phương thức register?
+Mỗi aplet được định danh bởi iede định danh, sau này sẽ có iede khác với giá trị ban đầu tại sao lại thế?
+Tại sao cần có sự thay đổi trong qua trình hoạt động

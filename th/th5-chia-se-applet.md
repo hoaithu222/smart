@@ -12,10 +12,10 @@
 
 ## 2. Quyết định cho đề tài: **một applet**
 
-| Phương án | Ưu | Nhược |
-|---|---|---|
-| **1 applet `StudentCard`** (chọn) | PIN, khóa AES, ví, nhật ký cùng ngữ cảnh → không qua tường lửa; ít lỗi; dễ demo trên JCIDE | Applet to hơn |
-| 2 applet: Định danh (chủ, giữ PIN + thông tin) + Ví/Điểm danh (khách) | Minh họa TH5; tách trách nhiệm | Mỗi lần chuyển applet là **bỏ chọn** applet chủ → khóa phiên `CLEAR_ON_DESELECT` và cờ PIN bị xóa → phải thiết kế lại phiên đăng nhập; truyền dữ liệu qua tường lửa phức tạp; JCIDE phải cài 2 gói |
+| Phương án                                                             | Ưu                                                                                         | Nhược                                                                                                                                                                                              |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 applet `StudentCard`** (chọn)                                     | PIN, khóa AES, ví, nhật ký cùng ngữ cảnh → không qua tường lửa; ít lỗi; dễ demo trên JCIDE | Applet to hơn                                                                                                                                                                                      |
+| 2 applet: Định danh (chủ, giữ PIN + thông tin) + Ví/Điểm danh (khách) | Minh họa TH5; tách trách nhiệm                                                             | Mỗi lần chuyển applet là **bỏ chọn** applet chủ → khóa phiên `CLEAR_ON_DESELECT` và cờ PIN bị xóa → phải thiết kế lại phiên đăng nhập; truyền dữ liệu qua tường lửa phức tạp; JCIDE phải cài 2 gói |
 
 Lý do chính để nói khi bị hỏi: yêu cầu đề tài là PIN bảo vệ cả thông tin lẫn giao dịch; để chung một applet thì "đã nhập PIN" là một trạng thái duy nhất trong cùng ngữ cảnh, không cần mở lỗ qua tường lửa.
 
@@ -54,13 +54,23 @@ Lưu ý khi làm thật: khi applet Thư viện được chọn thì `StudentCar
 
 ## 5. Câu hỏi có thể bị hỏi
 
-1. *Tường lửa applet là gì? Vì sao cần?* – mục 1.
-2. *Muốn applet khác dùng dữ liệu của mình thì làm thế nào?* – Shareable, 3 bước của TH5.
-3. *Sao nhóm không tách nhiều applet?* – mục 2.
-4. *SIO là gì?* – đối tượng của lớp cài đặt giao diện có thể chia sẻ; với ngữ cảnh khác chỉ thấy các phương thức của giao diện.
+1. _Tường lửa applet là gì? Vì sao cần?_ – mục 1.
+2. _Muốn applet khác dùng dữ liệu của mình thì làm thế nào?_ – Shareable, 3 bước của TH5.
+3. _Sao nhóm không tách nhiều applet?_ – mục 2.
+4. _SIO là gì?_ – đối tượng của lớp cài đặt giao diện có thể chia sẻ; với ngữ cảnh khác chỉ thấy các phương thức của giao diện.
 
 ## Nhật ký
 
-| Ngày | Ai | Làm được | Vướng |
-|---|---|---|---|
-| | | | |
+| Ngày | Ai  | Làm được | Vướng |
+| ---- | --- | -------- | ----- |
+|      |     |          |       |
+
+Bối cảnh là gì?
+
+- Các aplet trong cùng 1 packet sẽ cùng chung 1 bối cảnh nhóm giữ chúng sẽ không có tường lửa
+- Tường lửa sẽ ngăn cách giữa các đối tượng nhóm khác nhau
+- khác bối cảnh nhóm thì chia sẽ với nhau phải thông qua giao diện có thể chia sẽ với nhau
+- Khi không cùng bối cảnh nhóm phải thông qua giao diện có thể chia sẽ được
+- Bình thường có 5 cái nhưng sẽ đặt 3 cái vào cái có thể chia sẻ được
+- 1 aplet có thể chia sẻ khác nhau 5 phương thức, 2 phương thức với a, 3 phương thức với b, 1 phương thức với c : đối với mỗi phương thức đặt vào interface khác nhau
+- Có phải cứ chia sẽ là nhận được không
