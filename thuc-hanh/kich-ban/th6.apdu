@@ -1,0 +1,37 @@
+# Bai thuc hanh 6 - goi bai6_Crypto. Doi chieu day du bang may tinh: KiemTraMatMa.
+
+## Ham bam: MD5 / SHA-1 / SHA-256
+/cai bai6_Crypto.HashApplet
+/select bai6_Crypto.HashApplet
+# MD5("abc")
+00 01 00 00 03 61 62 63 00 => 90 01 50 98 3C D2 4F B0 D6 96 3F 7D 28 E1 7F 72 90 00
+# SHA-1("Fox") dung gia tri tren slide 3
+00 02 00 00 03 46 6F 78 00 => DF CD 34 54 BB EA 78 8A 75 1A 69 6C 24 D9 70 09 CA 99 2D 17 90 00
+# SHA-256("abc")
+00 03 00 00 03 61 62 63 00 => BA 78 16 BF 8F 01 CF EA 41 41 40 DE 5D AE 22 23 B0 03 61 A3 96 17 7A 9C B4 10 FF 61 F2 00 15 AD 90 00
+
+## AES - vi du chuan FIPS-197
+/cai bai6_Crypto.AesApplet
+/select bai6_Crypto.AesApplet
+# chua nap khoa
+00 11 00 00 10 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 00 => 69 85
+# nap khoa AES-128
+00 10 00 00 10 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F => 90 00
+# ma hoa ECB khong dem
+00 11 00 00 10 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 00 => 69 C4 E0 D8 6A 7B 04 30 D8 CD B7 80 70 B4 C5 5A 90 00
+# giai ma
+00 12 00 00 10 69 C4 E0 D8 6A 7B 04 30 D8 CD B7 80 70 B4 C5 5A 00 => 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 90 00
+# CBC co dem: "abc" thanh 1 khoi 16 byte
+00 11 01 01 03 61 62 63 00 => ................................ 90 00
+
+## RSA 1024 bit
+/cai bai6_Crypto.RsaApplet
+/select bai6_Crypto.RsaApplet
+00 21 01 00 03 => 69 85
+00 20 00 00 => 90 00
+# so mu cong khai 65537
+00 21 01 00 03 => 01 00 01 90 00
+# modulus 128 byte
+00 21 00 00 80 => * 90 00
+# ky thu thach (challenge) 01 02 03 04 -> chu ky 128 byte
+00 24 00 00 04 01 02 03 04 00 => * 90 00

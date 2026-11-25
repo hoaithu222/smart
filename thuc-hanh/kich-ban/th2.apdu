@@ -1,0 +1,56 @@
+# Bai thuc hanh 2 - goi bai2_Object: doi tuong ben va doi tuong tam thoi.
+
+## Muc 2.3 - vi du cua de (ket qua giong het tai lieu)
+/cai bai2_Object.Applet1
+/select 11223344550201
+# vua cai: tat ca bang 0
+00 00 00 00 => 00 00 00 00 00 00 00 90 00
+00 01 00 00 => 90 00
+00 00 00 00 => 09 01 02 03 04 05 06 90 00
+# kich ban 1: bo chon applet -> buffer1 (CLEAR_ON_DESELECT) mat
+/deselect
+/select 11223344550201
+00 00 00 00 => 09 01 02 00 00 05 06 90 00
+# kich ban 2: reset the -> mat ca buffer2 (CLEAR_ON_RESET); x va buffer con
+/reset
+/select 11223344550201
+00 00 00 00 => 09 01 02 00 00 00 00 90 00
+
+## Bai tap 2, bai 1: dem so lan nhap sai PIN (PIN mac dinh 1234)
+/cai bai2_Object.Applet2
+/select bai2_Object.Applet2
+00 30 00 00 02 => 00 00 90 00
+00 20 00 00 04 30 30 30 30 => 63 00
+00 20 00 00 04 30 30 30 30 => 63 00
+00 30 00 00 02 => 02 02 90 00
+# reset giua chung: wrongTryCounter (EEPROM) con = 2, bien dem trong RAM ve 0
+/reset
+/select bai2_Object.Applet2
+00 30 00 00 02 => 02 00 90 00
+# nhap dung -> ve 0
+00 20 00 00 04 31 32 33 34 => 90 00
+00 30 00 00 02 => 00 00 90 00
+# PIN thieu chu so cung tinh la sai
+00 20 00 00 03 31 32 33 => 63 00
+00 30 00 00 02 => 01 01 90 00
+
+## Doi PIN bang tham so cai dat "666666"
+/moi
+/cai bai2_Object.Applet2 param=363636363636
+/select bai2_Object.Applet2
+00 20 00 00 04 31 32 33 34 => 63 00
+00 20 00 00 06 36 36 36 36 36 36 => 90 00
+
+## Bai tap 2, bai 2: bo dem tam, in xong thi giai phong
+/cai bai2_Object.Applet3
+/select bai2_Object.Applet3
+00 02 00 00 00 => 69 85
+00 01 00 00 27 43 54 30 37 30 32 35 34 7C 4E 67 75 79 65 6E 20 56 61 6E 20 41 7C 30 31 2F 30 31 2F 32 30 30 34 7C 48 61 20 4E 6F 69 => 90 00
+00 02 00 00 00 => "CT070254|Nguyen Van A|01/01/2004|Ha Noi" 90 00
+# da giai phong sau khi in
+00 02 00 00 00 => 69 85
+# nhap lai roi bo chon applet: bo dem CLEAR_ON_DESELECT tu mat
+00 01 00 00 04 31 32 33 34 => 90 00
+/deselect
+/select bai2_Object.Applet3
+00 02 00 00 00 => 69 85

@@ -1,0 +1,68 @@
+# Bai thuc hanh 4 - goi bai4_InstallMethod: phuong thuc install va tham so cai dat.
+
+## Phan mo dau - ham tao cap phat roi register()
+/cai bai4_InstallMethod.Applet1
+/select bai4_InstallMethod.Applet1
+00 00 00 00 01 => 0A 90 00
+
+## Muc 4.4 - Instance AID "DIEM_THI", tham so 53 56 30 31 09 (ket qua giong tai lieu)
+/moi
+/cai bai4_InstallMethod.Applet2
+/select 4449454D5F544849
+00 00 01 02 => 53 56 30 31 09 90 00
+
+## Muc 4.4 - khong co tham so: mac dinh trong ma cua de (SV01, 8 mon)
+/moi
+/cai bai4_InstallMethod.Applet2 param=
+/select 4449454D5F544849
+00 00 01 02 => 53 56 30 31 08 90 00
+
+## Muc 4.5 BAI TAP - nhap, in, sua, xoa diem
+/moi
+/cai bai4_InstallMethod.Applet3
+/select 4449454D5F544849
+# thong tin: SV01, toi da 9 mon, da nhap 0
+00 00 00 00 00 => 53 56 30 31 09 00 90 00
+00 02 00 00 00 => 90 00
+# nhap 3 mon (vi du trong de)
+00 01 00 00 06 01 08 02 06 04 09 => 01 08 02 06 04 09 90 00
+# trung ID mon da co
+00 01 00 00 02 02 07 => 6A 89
+# trung ID ngay trong mot lenh
+00 01 00 00 04 05 07 05 08 => 6A 89
+# diem 11 khong hop le
+00 01 00 00 02 05 0B => 6A 80
+# so byte le (thieu diem)
+00 01 00 00 03 05 07 06 => 6A 80
+00 02 00 00 00 => 01 08 02 06 04 09 90 00
+# sua mon 02 thanh 10 diem
+00 03 00 00 02 02 0A => 01 08 02 0A 04 09 90 00
+# sua mon khong co
+00 03 00 00 02 07 05 => 6A 83
+# mot mon dung, mot mon khong co: khong sua mon nao
+00 03 00 00 04 01 00 07 05 => 6A 83
+00 02 00 00 00 => 01 08 02 0A 04 09 90 00
+# xoa mon 01
+00 04 00 00 01 01 => 02 0A 04 09 90 00
+00 04 00 00 01 01 => 6A 83
+# nhap them 7 mon cho du 9
+00 01 00 00 0E 05 05 06 06 07 07 08 08 09 09 0A 00 0B 01 => 02 0A 04 09 05 05 06 06 07 07 08 08 09 09 0A 00 0B 01 90 00
+# mon thu 10: vuot so mon thi
+00 01 00 00 02 0C 05 => 6A 84
+# xoa nhieu mon mot lenh
+00 04 00 00 03 0B 02 09 => 04 09 05 05 06 06 07 07 08 08 0A 00 90 00
+# xoa trung ID trong mot lenh: khong xoa gi
+00 04 00 00 02 04 04 => 6A 83
+# rut the, cam lai: diem con nguyen
+/reset
+/select 4449454D5F544849
+00 00 00 00 00 => 53 56 30 31 09 06 90 00
+# xoa het
+00 04 00 00 06 04 05 06 07 08 0A => 90 00
+00 00 00 00 00 => 53 56 30 31 09 00 90 00
+
+## Muc 4.5 - khong co tham so: mac dinh SV01, 9 mon
+/moi
+/cai bai4_InstallMethod.Applet3 param=
+/select 4449454D5F544849
+00 00 00 00 00 => 53 56 30 31 09 00 90 00

@@ -1,0 +1,28 @@
+# Bai thuc hanh 3 - goi bai3_Transaction: thao tac nguyen to va giao dich.
+
+## Muc 3.2, vi du 2 - huy giao dich khi i = 5 (ket qua giong tai lieu)
+/cai bai3_Transaction.Applet1
+/select bai3_Transaction.Applet1
+00 01 01 02 => 00 00 00 00 00 00 00 00 00 00 90 00
+00 00 01 02 => 90 00
+00 01 01 02 => 00 00 00 00 00 00 06 07 08 09 90 00
+
+## Muc 3.3 - bien cuc bo va doi tuong tam KHONG bi hoan tac
+/cai bai3_Transaction.Applet2
+/select bai3_Transaction.Applet2
+00 00 01 02 => 00 00 00 02 04 06 01 90 00
+# goi lai van nhu cu
+00 00 01 02 => 00 00 00 02 04 06 01 90 00
+
+## Muc 3.2, vi du 1 - hoac chep het, hoac khong chep gi
+/cai bai3_Transaction.Applet3
+/select bai3_Transaction.Applet3
+00 03 00 00 08 => 00 00 00 00 00 00 00 00 90 00
+# chep roi abort: khong phan tu nao duoc chep
+00 01 00 00 => 90 00
+00 03 00 00 08 => 00 00 00 00 00 00 00 00 90 00
+# chep roi commit: du 8 phan tu
+00 00 00 00 => 90 00
+00 03 00 00 08 => 01 02 03 04 05 06 07 08 90 00
+00 02 00 00 => 90 00
+00 03 00 00 08 => 00 00 00 00 00 00 00 00 90 00

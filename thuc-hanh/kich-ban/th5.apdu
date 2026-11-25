@@ -1,0 +1,36 @@
+# Bai thuc hanh 5 - masterPack (applet chu) va slavePack (applet khach).
+# Trong JCIDE: cai masterApp TRUOC (AID 11 22 33 44 55 05 00 00).
+
+/cai masterPack.masterApp
+/cai slavePack.slaveApp
+/cai slavePack.slaveAppDiem
+/cai slavePack.slaveApp1
+/cai slavePack.slaveAppNonStatic
+/cai slavePack.slaveAppMang
+
+## Muc 5.4 - applet khach doc mang cua applet chu qua bo dem APDU
+/select 1122334455050101
+00 00 01 02 => 01 02 03 04 05 90 00
+
+## Muc 5.5, kich ban 1 - tham so kieu co ban: (6*8 + 4*9)/10 = 8
+/select 1122334455050103
+00 00 01 02 => 08 90 00
+
+## Muc 5.5, kich ban 2 - truong static cua lop sinhVien
+/select 1122334455050104
+00 00 01 02 => 08 90 00
+
+## Muc 5.5 - truong khong static (doi tuong chua new) -> 6F 00
+/select 1122334455050105
+00 00 01 02 => 6F 00
+
+## Muc 5.5 - truyen mang rieng cua applet khach: tuong lua chan
+# (jCardSim khong co tuong lua, chi JCIDE / the that moi ra 6F 00)
+/select 1122334455050102
+00 00 01 02 => [that] 6F 00
+
+## Chua cai applet chu -> 6A 82
+/moi
+/cai slavePack.slaveApp
+/select 1122334455050101
+00 00 01 02 => 6A 82
