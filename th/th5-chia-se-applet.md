@@ -74,4 +74,10 @@ Bối cảnh là gì?
 - Khi không cùng bối cảnh nhóm phải thông qua giao diện có thể chia sẽ được
 - Bình thường có 5 cái nhưng sẽ đặt 3 cái vào cái có thể chia sẻ được
 - 1 aplet có thể chia sẻ khác nhau 5 phương thức, 2 phương thức với a, 3 phương thức với b, 1 phương thức với c : đối với mỗi phương thức đặt vào interface khác nhau
-- Có phải cứ chia sẽ là nhận được không
+- Có phải cứ chia sẽ là nhận được không : anh cần phải biết tôi là ai đã,sau khi check aid mỗi lần sử dụng phương thức nào yêu cầu check aid 1 lần nữa
+- Làm thế nào có thể chia sẻ được đến a có thể chia sẻ :
+- Phương thức xác thực có bổ sung có thử thác và phản hồi thử thách mới cấp quyền truy cập
+- Phần này sẽ quan trọng nếu có nhiều aplet có nhiều dữ liệu riêng tư nhưng sẽ chia sẽ dữ liệu ít
+- Một ông share và 1 ông nhận sẽ phải làm cái gì?
+
+- dữ liệu phải được mã hóa trên thẻ, và xác thực thẻ có phải tôi tạo ra như thế nào sẽ là nằm vào buổi t6
